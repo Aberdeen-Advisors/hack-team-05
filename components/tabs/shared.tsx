@@ -1,6 +1,5 @@
 import { Loader2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import type { EngineState } from "@/components/workspace";
 
 export function StreamingHint({ label }: { label: string }) {
@@ -37,18 +36,6 @@ export function tabView<T>(state: EngineState<T>) {
   const data = (state.result ?? state.partial) as Partial<T> | undefined;
   const isStreaming = state.status === "running";
   return { kind: "ok" as const, data, isStreaming };
-}
-
-export function EvidenceChip({ tag, quote }: { tag: string; quote: string }) {
-  return (
-    <Badge
-      variant="outline"
-      className="border-verdigris/50 bg-verdigris/10 text-aberdeen-blue"
-      title={quote}
-    >
-      {tag}
-    </Badge>
-  );
 }
 
 export function SectionHeading({ children }: { children: React.ReactNode }) {

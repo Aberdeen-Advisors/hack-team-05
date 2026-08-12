@@ -32,11 +32,8 @@ export function MatchTab({ state }: { state: EngineState<EvidenceMap> }) {
                     {m?.docTag ? ` · ${m.docTag}` : ""}
                   </p>
                   <h3 className="mt-1 text-lg font-medium text-aberdeen-blue">
-                    {m?.docName}
+                    {m?.clientDescriptor ?? "Prior Aberdeen engagement"}
                   </h3>
-                  <p className="text-sm text-onyx">
-                    Client: {m?.clientDescriptor}
-                  </p>
                 </div>
               </div>
               <p className="mt-3 text-sm text-onyx">{m?.whyRelevant}</p>
@@ -45,15 +42,23 @@ export function MatchTab({ state }: { state: EngineState<EvidenceMap> }) {
                   Outcome: {m.outcome}
                 </p>
               )}
-              {(m?.rfpRequirementsAddressed?.length ?? 0) > 0 && (
-                <div className="mt-3 flex flex-wrap gap-1">
-                  {(m?.rfpRequirementsAddressed ?? []).map((r, j) => (
-                    <Badge key={j} variant="outline">
-                      {r}
-                    </Badge>
-                  ))}
-                </div>
-              )}
+              {(() => {
+                const reqs = (m?.rfpRequirementsAddressed ?? []).filter(
+                  (r) => !!r && !/^\s*R\d+\s*$/i.test(r), // hide bare IDs like "R5"
+                );
+                return reqs.length > 0 ? (
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    <span className="text-[10px] font-semibold uppercase tracking-widest text-onyx/50">
+                      Addresses
+                    </span>
+                    {reqs.map((r, j) => (
+                      <Badge key={j} variant="outline" className="text-xs font-normal">
+                        {r}
+                      </Badge>
+                    ))}
+                  </div>
+                ) : null;
+              })()}
             </Card>
           ))}
         </div>

@@ -224,36 +224,6 @@ export async function buildProposal(args: {
     }
   }
 
-  // Timeline
-  if (results.design?.sevenDayPursuitPlan?.length) {
-    push(H1("7-Day Pursuit Timeline"));
-    for (const d of results.design.sevenDayPursuitPlan) {
-      push(
-        new Paragraph({
-          spacing: { before: 100, after: 60 },
-          children: [
-            new TextRun({
-              text: `Day ${d.day} — ${d.engine}`,
-              bold: true,
-              color: BLUE,
-              font: "Poppins",
-              size: 24,
-            }),
-            new TextRun({
-              text: `   (Reviewer: ${d.reviewer})`,
-              color: TEAL,
-              font: "Poppins",
-              size: 20,
-              italics: true,
-            }),
-          ],
-        }),
-      );
-      for (const del of d.deliverables ?? []) push(Bullet(del));
-      push(P(`Checkpoint: ${d.checkpoint}`));
-    }
-  }
-
   // Why Aberdeen
   if (results.create?.whyAberdeen) {
     push(H1("Why Aberdeen"));
@@ -265,12 +235,20 @@ export async function buildProposal(args: {
   // Requirements matrix appendix
   if (results.understand?.requirements?.length) {
     push(H1("Appendix A — Requirements Matrix"));
+    const headers = [
+      "ID",
+      "Requirement",
+      "Category",
+      "Mandatory",
+      "Response Action",
+    ];
+    const colWidths = [8, 44, 12, 12, 24]; // percentages summing to 100
     const rows: TableRow[] = [
       new TableRow({
-        children: ["ID", "Requirement", "Category", "Mandatory"].map(
-          (h) =>
+        children: headers.map(
+          (h, idx) =>
             new TableCell({
-              width: { size: 25, type: WidthType.PERCENTAGE },
+              width: { size: colWidths[idx], type: WidthType.PERCENTAGE },
               children: [
                 new Paragraph({
                   children: [
@@ -296,9 +274,11 @@ export async function buildProposal(args: {
               r.requirement,
               r.category,
               r.mandatory ? "Yes" : "No",
+              r.responseAction ?? "—",
             ].map(
-              (v) =>
+              (v, idx) =>
                 new TableCell({
+                  width: { size: colWidths[idx], type: WidthType.PERCENTAGE },
                   children: [
                     new Paragraph({
                       children: [
@@ -322,6 +302,53 @@ export async function buildProposal(args: {
         width: { size: 100, type: WidthType.PERCENTAGE },
       }),
     );
+
+    // Legend
+    push(H2("Response Action — legend"));
+    const legend: [string, string][] = [
+      [
+        "Address",
+        "Explain how Aberdeen would meet this requirement; no artifact needed yet.",
+      ],
+      [
+        "Provide Information",
+        "Supply the specific requested information in the proposal response.",
+      ],
+      [
+        "Provide Attachment",
+        "A specific form, document, or pricing file must accompany the proposal.",
+      ],
+      [
+        "Acknowledge / Confirm",
+        "Explicitly confirm Aberdeen can comply with the condition.",
+      ],
+      [
+        "Deliverable if Awarded",
+        "Something Aberdeen would actually produce during the engagement.",
+      ],
+    ];
+    for (const [action, meaning] of legend) {
+      push(
+        new Paragraph({
+          spacing: { after: 60 },
+          children: [
+            new TextRun({
+              text: `${action}: `,
+              bold: true,
+              color: BLUE,
+              font: "Poppins",
+              size: 22,
+            }),
+            new TextRun({
+              text: meaning,
+              color: ONYX,
+              font: "Poppins",
+              size: 22,
+            }),
+          ],
+        }),
+      );
+    }
   }
 
   const doc = new Document({

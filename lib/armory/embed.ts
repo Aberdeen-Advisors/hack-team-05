@@ -1,7 +1,9 @@
 import { embedMany } from "ai";
 import { gateway } from "@ai-sdk/gateway";
 
-const EMBED_MODEL = "openai/text-embedding-3-large";
+// text-embedding-3-small is 1536-dim (matches Upstash Vector's default index size).
+// Plenty of retrieval quality for a hackathon-sized Armory.
+const EMBED_MODEL = "openai/text-embedding-3-small";
 const BATCH_SIZE = 64;
 
 /**

@@ -36,6 +36,22 @@ export const opportunityBriefSchema = z.object({
         category: z
           .enum(["functional", "technical", "compliance", "commercial", "other"]),
         mandatory: z.boolean(),
+        responseAction: z
+          .enum([
+            "Address",
+            "Provide Information",
+            "Provide Attachment",
+            "Acknowledge / Confirm",
+            "Deliverable if Awarded",
+          ])
+          .describe(
+            "How the pursuit team should respond to this requirement. " +
+              "Address = explain approach (no artifact yet). " +
+              "Provide Information = supply specific requested info in the response. " +
+              "Provide Attachment = a specific form, doc, or pricing file must accompany the proposal. " +
+              "Acknowledge / Confirm = explicitly confirm Aberdeen can comply. " +
+              "Deliverable if Awarded = something Aberdeen would produce during the engagement.",
+          ),
       }),
     )
     .describe(
@@ -66,6 +82,31 @@ export const opportunityBriefSchema = z.object({
 export type OpportunityBrief = z.infer<typeof opportunityBriefSchema>;
 
 // Engine B — Strategize
+const angleSchema = z.object({
+  summary: z
+    .string()
+    .describe(
+      "One tight sentence (<25 words) capturing the angle. Displayed as a bold lead.",
+    ),
+  bullets: z
+    .array(
+      z.object({
+        headline: z
+          .string()
+          .describe(
+            "2–5 word bolded phrase — the main aspect that will be visually highlighted.",
+          ),
+        body: z
+          .string()
+          .describe(
+            "One short sentence (<25 words) explaining the headline. Concrete, not generic.",
+          ),
+      }),
+    )
+    .min(3)
+    .max(4),
+});
+
 export const winStrategySchema = z.object({
   pointOfView: z
     .string()
@@ -75,13 +116,13 @@ export const winStrategySchema = z.object({
   winThemes: z
     .array(
       z.object({
-        title: z.string(),
-        technicalAngle: z.string(),
-        humanAngle: z
-          .string()
-          .describe(
-            "The Aberdeen human element for this theme (culture, ownership, referral workforce, etc.).",
-          ),
+        title: z.string().describe("Punchy theme title (<10 words)."),
+        humanAngle: angleSchema.describe(
+          "The Aberdeen human element for this theme (culture, ownership, referral workforce, etc.). LEAD WITH THIS — Aberdeen's people-and-culture story is our strongest differentiator.",
+        ),
+        technicalAngle: angleSchema.describe(
+          "The technical / delivery angle for this theme. Comes after the human angle.",
+        ),
         evidence: z.array(evidenceSchema),
       }),
     )
@@ -127,7 +168,9 @@ export const evidenceMapSchema = z.object({
         rfpRequirementsAddressed: z
           .array(z.string())
           .describe(
-            "Which RFP requirement ids (R1, R2, …) or short phrases this evidence supports.",
+            "Short self-explanatory phrases (2–6 words) describing each RFP requirement this evidence supports. " +
+              "Examples: 'Data governance', 'AI bias monitoring', 'Contractor onboarding workflow'. " +
+              "DO NOT return bare requirement IDs like 'R5' or 'R12' — every entry must be a human-readable phrase.",
           ),
         outcome: z
           .string()
@@ -194,14 +237,18 @@ export const solutionBlueprintSchema = z.object({
   deliveryTimeline: z
     .array(
       z.object({
-        milestone: z.string(),
+        milestone: z
+          .string()
+          .describe(
+            "SHORT milestone name (<8 words). Examples: 'Engagement kickoff', 'Phase 1 foundation complete', 'Pilot cohort onboarded'. Do NOT include descriptions or outcomes here.",
+          ),
         weekOffset: z
           .string()
           .describe("Timing like 'Week 1', 'Week 4', 'Month 3'."),
       }),
     )
     .describe(
-      "Post-award delivery milestones sized to the RFP's stated engagement length.",
+      "Post-award delivery milestones sized to the RFP's stated engagement length. Keep each milestone name terse.",
     ),
 });
 export type SolutionBlueprint = z.infer<typeof solutionBlueprintSchema>;
@@ -231,7 +278,8 @@ export const proposalDraftSchema = z.object({
   whyAberdeen: z
     .string()
     .describe(
-      "~200 words distilling the differentiators + culture into a single 'Why Aberdeen' passage. Cite [C#] tags inline for any factual claims about Aberdeen.",
+      "~200 words distilling the differentiators + culture into a single 'Why Aberdeen' passage. " +
+        "Do NOT include [C#] citation tags inline — write clean prose without any bracketed reference tokens.",
     ),
   deckSpec: z
     .array(

@@ -44,11 +44,31 @@ export async function extractTextFromBuffer(
 }
 
 /**
+ * Explicit filename → doctype overrides for the known Aberdeen Armory files.
+ * Checked first; falls through to the folder/heuristic logic below.
+ * Match is case-insensitive substring on basename.
+ */
+const KNOWN_FILES: { match: string; type: DocType }[] = [
+  { match: "aberdeen culture charter", type: "culture" },
+  { match: "aberdeen advisors overview", type: "credentials" },
+  { match: "top clients + types of work", type: "credentials" },
+  { match: "aberdeen_response_hanger_ai_rfp", type: "proposal" },
+  { match: "case for digital transformation", type: "services" },
+  { match: "vmo swot tools", type: "services" },
+  { match: "data archiving_option comparison", type: "case-study" },
+  { match: "san mateo cio", type: "case-study" },
+  { match: "hanger_ai_rfp_final", type: "market-research" }, // prior RFP, not Aberdeen IP
+];
+
+/**
  * Cheap heuristic to bucket a doc by name/path. Used for metadata-filtered retrieval.
  * The team can override by prefixing folders in SharePoint (e.g., "Case Studies/…").
  */
 export function inferDocType(pathOrName: string): DocType {
   const p = pathOrName.toLowerCase();
+  for (const { match, type } of KNOWN_FILES) {
+    if (p.includes(match)) return type;
+  }
   if (p.includes("case stud") || p.includes("case-study")) return "case-study";
   if (p.includes("proposal") || p.includes("rfp response")) return "proposal";
   if (p.includes("credential") || p.includes("team") || p.includes("bio"))

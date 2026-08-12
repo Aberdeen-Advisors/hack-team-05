@@ -1,5 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { GanttTimeline } from "@/components/gantt-timeline";
 import type { EngineState } from "@/components/workspace";
 import type { SolutionBlueprint } from "@/lib/engines/schemas";
 import {
@@ -81,43 +82,18 @@ export function DesignTab({ state }: { state: EngineState<SolutionBlueprint> }) 
       </Card>
 
       <Card className="p-6">
-        <SectionHeading>7-day pursuit plan</SectionHeading>
-        <div className="mt-3 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-          {(data.sevenDayPursuitPlan ?? []).map((d, i) => (
-            <div key={i} className="rounded-md border border-border p-3">
-              <div className="flex items-baseline justify-between">
-                <p className="text-xs font-semibold uppercase tracking-wider text-verdigris">
-                  Day {d?.day} · {d?.engine}
-                </p>
-                <Badge variant="outline" className="text-xs">
-                  {d?.reviewer}
-                </Badge>
-              </div>
-              <ul className="mt-2 list-disc space-y-1 pl-4 text-xs text-onyx">
-                {(d?.deliverables ?? []).map((del, j) => (
-                  <li key={j}>{del}</li>
-                ))}
-              </ul>
-              <p className="mt-2 text-xs italic text-onyx/70">
-                Checkpoint: {d?.checkpoint}
-              </p>
-            </div>
-          ))}
-        </div>
-      </Card>
-
-      <Card className="p-6">
         <SectionHeading>Delivery timeline (post-award)</SectionHeading>
-        <ul className="mt-2 space-y-1 text-sm text-onyx">
-          {(data.deliveryTimeline ?? []).map((t, i) => (
-            <li key={i} className="flex gap-2">
-              <span className="font-mono text-xs text-verdigris">
-                {t?.weekOffset}
-              </span>
-              <span>{t?.milestone}</span>
-            </li>
-          ))}
-        </ul>
+        <p className="mt-1 text-xs font-light text-onyx/60">
+          Key milestones across the engagement window.
+        </p>
+        <div className="mt-4">
+          <GanttTimeline
+            items={(data.deliveryTimeline ?? []).map((t) => ({
+              label: t?.milestone ?? "",
+              weekOffset: t?.weekOffset,
+            }))}
+          />
+        </div>
       </Card>
     </div>
   );

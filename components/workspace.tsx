@@ -1,12 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CheckCircle2, CircleDashed, Download, Loader2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { UnderstandTab } from "@/components/tabs/understand-tab";
 import { StrategizeTab } from "@/components/tabs/strategize-tab";
@@ -60,12 +58,8 @@ export function Workspace({ pursuit }: { pursuit: PursuitRecord }) {
   const [runDone, setRunDone] = useState(false);
   const [runError, setRunError] = useState<string | null>(null);
   const [exporting, setExporting] = useState<null | "pptx" | "docx">(null);
-  const startedRef = useRef(false);
 
   useEffect(() => {
-    if (startedRef.current) return;
-    startedRef.current = true;
-
     const es = new EventSource(`/api/analyze/${pursuit.id}/stream`);
 
     es.onmessage = (evt) => {
@@ -183,66 +177,72 @@ export function Workspace({ pursuit }: { pursuit: PursuitRecord }) {
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-2">
-        <div className="flex flex-wrap items-baseline justify-between gap-4">
-          <div>
-            <p className="text-xs font-medium uppercase tracking-widest text-verdigris">
-              Pursuit Workspace
-            </p>
-            <h1 className="text-2xl font-medium text-aberdeen-blue">
-              {pursuit.opportunityName ?? "Untitled Opportunity"}
+    <div className="flex flex-col gap-8">
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-wrap items-end justify-between gap-6">
+          <div className="flex flex-col gap-2">
+            <span className="inline-flex w-fit items-center rounded-md bg-aberdeen-blue px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-white">
+              Pursuit workspace
+            </span>
+            <h1 className="text-3xl font-bold tracking-tight text-aberdeen-blue sm:text-4xl">
+              {pursuit.opportunityName ?? "Untitled opportunity"}
             </h1>
-            <p className="text-sm text-onyx">
-              RFP: <span className="font-mono">{pursuit.rfp.fileName}</span> ·{" "}
-              {(pursuit.rfp.charCount / 1000).toFixed(0)}K chars ·{" "}
-              <Badge variant="outline" className="ml-1 uppercase text-xs">
+            <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-light text-onyx/70">
+              <span className="font-mono text-onyx/80">
+                {pursuit.rfp.fileName}
+              </span>
+              <span className="text-onyx/30">·</span>
+              <span>{(pursuit.rfp.charCount / 1000).toFixed(0)}K chars</span>
+              <span className="text-onyx/30">·</span>
+              <span className="rounded-full border border-border/70 px-2 py-0.5 text-[10px] uppercase tracking-wider text-onyx/70">
                 {pursuit.rfp.jurisdiction}
-              </Badge>
+              </span>
             </p>
           </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
+          <div className="flex items-center gap-6">
+            <button
+              type="button"
               onClick={() => exportFile("docx")}
               disabled={!canExport || exporting !== null}
+              className="inline-flex items-center gap-2 border-b border-transparent pb-0.5 text-sm font-medium text-onyx/80 transition-all hover:border-onyx/50 hover:text-aberdeen-blue disabled:cursor-not-allowed disabled:opacity-40"
             >
               {exporting === "docx" ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                <Download className="mr-2 h-4 w-4" />
+                <Download className="h-4 w-4" strokeWidth={1.5} />
               )}
               Export Word
-            </Button>
-            <Button
+            </button>
+            <button
+              type="button"
               onClick={() => exportFile("pptx")}
               disabled={!canExport || exporting !== null}
-              className="bg-aberdeen-blue text-white hover:bg-aberdeen-blue/90"
+              className="inline-flex items-center gap-2 border-b border-aberdeen-blue pb-0.5 text-sm font-medium text-aberdeen-blue transition-opacity disabled:cursor-not-allowed disabled:opacity-40"
             >
               {exporting === "pptx" ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                <Download className="mr-2 h-4 w-4" />
+                <Download className="h-4 w-4" strokeWidth={1.5} />
               )}
               Export Deck
-            </Button>
+            </button>
           </div>
         </div>
         {runError && (
-          <div className="flex items-center gap-2 rounded-md border border-jasper/40 bg-jasper/10 px-3 py-2 text-sm text-jasper">
+          <div className="flex items-center gap-2 rounded-md border border-jasper/40 bg-jasper/[0.04] px-3 py-2 text-sm text-jasper">
             <AlertCircle className="h-4 w-4" />
             {runError}
           </div>
         )}
       </div>
 
-      <Separator />
+      <Separator className="bg-border/60" />
 
       <Tabs
         value={activeTab}
         onValueChange={(v) => setActiveTab(v as EngineName)}
       >
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="flex h-auto w-full items-stretch justify-start gap-0 rounded-none border-b border-border/60 bg-transparent p-0">
           {(
             [
               "understand",
@@ -251,10 +251,20 @@ export function Workspace({ pursuit }: { pursuit: PursuitRecord }) {
               "design",
               "create",
             ] as EngineName[]
-          ).map((k) => (
-            <TabsTrigger key={k} value={k} className="flex items-center gap-2">
-              <StatusDot status={state[k].status} />
-              {ENGINE_LABELS[k]}
+          ).map((k, i) => (
+            <TabsTrigger
+              key={k}
+              value={k}
+              className="group relative flex flex-1 items-center gap-3 rounded-none border-0 bg-transparent px-4 py-4 text-left text-sm font-light text-onyx/70 shadow-none transition-colors data-[state=active]:bg-transparent data-[state=active]:text-aberdeen-blue data-[state=active]:shadow-none"
+            >
+              <span className="font-mono text-[11px] text-onyx/50 group-data-[state=active]:text-verdigris">
+                0{i + 1}
+              </span>
+              <div className="flex flex-1 items-center gap-2">
+                <StatusDot status={state[k].status} />
+                <span className="font-medium">{ENGINE_LABELS[k]}</span>
+              </div>
+              <span className="absolute inset-x-0 -bottom-px h-px scale-x-0 bg-aberdeen-blue transition-transform group-data-[state=active]:scale-x-100" />
             </TabsTrigger>
           ))}
         </TabsList>
@@ -280,12 +290,12 @@ export function Workspace({ pursuit }: { pursuit: PursuitRecord }) {
 
 function StatusDot({ status }: { status: EngineState<unknown>["status"] }) {
   if (status === "done")
-    return <CheckCircle2 className="h-4 w-4 text-jade" />;
+    return <CheckCircle2 className="h-3.5 w-3.5 text-jade" strokeWidth={1.75} />;
   if (status === "running")
-    return <Loader2 className="h-4 w-4 animate-spin text-verdigris" />;
+    return <Loader2 className="h-3.5 w-3.5 animate-spin text-gold" strokeWidth={1.75} />;
   if (status === "error")
-    return <AlertCircle className="h-4 w-4 text-jasper" />;
-  return <CircleDashed className="h-4 w-4 text-onyx/40" />;
+    return <AlertCircle className="h-3.5 w-3.5 text-jasper" strokeWidth={1.75} />;
+  return <CircleDashed className="h-3.5 w-3.5 text-onyx/30" strokeWidth={1.5} />;
 }
 
 // Re-exported for tab components.

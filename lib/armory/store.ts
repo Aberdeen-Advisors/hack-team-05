@@ -103,14 +103,17 @@ export async function readManifest(): Promise<Manifest> {
 
 export async function writeManifest(manifest: Manifest): Promise<void> {
   const index = getIndex();
-  // Manifest lives at a fixed ID with a zero vector — never returned by queries because
-  // the zero vector has effectively no cosine similarity to normalized real vectors.
-  const dim = 3072;
-  const zeros = new Array(dim).fill(0);
+  // Manifest lives at a fixed ID with a synthetic unit vector. Upstash cosine indexes
+  // reject all-zero vectors, so we use [1, 0, …, 0] — a valid unit vector so far from
+  // any real text embedding it will never surface in top-k results.
+  // dim matches text-embedding-3-small = 1536.
+  const dim = 1536;
+  const sentinel = new Array(dim).fill(0);
+  sentinel[0] = 1;
   await index.upsert([
     {
       id: MANIFEST_ID,
-      vector: zeros,
+      vector: sentinel,
       metadata: { manifest: JSON.stringify(manifest) },
     },
   ]);

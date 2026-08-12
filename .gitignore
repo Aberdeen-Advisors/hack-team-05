@@ -39,3 +39,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local Armory dump — never commit real Aberdeen SharePoint content
+/tmp/
+/tmp/armory-dump/
+
+# stray editor / duplicate files that can leak secrets
+*copy.json
+*copy.env
+

@@ -3,7 +3,6 @@ import type { EngineState } from "@/components/workspace";
 import type { WinStrategy } from "@/lib/engines/schemas";
 import {
   ErrorCard,
-  EvidenceChip,
   PendingCard,
   SectionHeading,
   StreamingHint,
@@ -32,33 +31,26 @@ export function StrategizeTab({ state }: { state: EngineState<WinStrategy> }) {
         <div className="mt-3 grid gap-4 md:grid-cols-2">
           {(data.winThemes ?? []).map((t, i) => (
             <Card key={i} className="border-l-4 border-l-verdigris p-6">
-              <h3 className="text-lg font-medium text-aberdeen-blue">
-                {i + 1}. {t?.title}
+              <p className="font-mono text-xs text-verdigris">
+                Theme {String(i + 1).padStart(2, "0")}
+              </p>
+              <h3 className="mt-1 text-lg font-medium leading-snug text-aberdeen-blue">
+                {t?.title}
               </h3>
-              <div className="mt-3 flex flex-col gap-3 text-sm">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-verdigris">
-                    Technical angle
-                  </p>
-                  <p className="text-onyx">{t?.technicalAngle}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-verdigris">
-                    Human angle
-                  </p>
-                  <p className="text-onyx">{t?.humanAngle}</p>
-                </div>
-                {(t?.evidence?.length ?? 0) > 0 && (
-                  <div className="flex flex-wrap gap-1">
-                    {(t?.evidence ?? []).map((e, j) => (
-                      <EvidenceChip
-                        key={j}
-                        tag={e?.tag ?? ""}
-                        quote={e?.quote ?? ""}
-                      />
-                    ))}
-                  </div>
-                )}
+              <div className="mt-4 flex flex-col gap-5 text-sm">
+                <AngleBlock
+                  label="Human"
+                  summary={t?.humanAngle?.summary}
+                  bullets={t?.humanAngle?.bullets}
+                  accent="teal"
+                />
+                <AngleBlock
+                  label="Technical"
+                  summary={t?.technicalAngle?.summary}
+                  bullets={t?.technicalAngle?.bullets}
+                  accent="blue"
+                />
+                {/* Internal evidence tags intentionally hidden — they carry no meaning to the reader */}
               </div>
             </Card>
           ))}
@@ -74,17 +66,6 @@ export function StrategizeTab({ state }: { state: EngineState<WinStrategy> }) {
                 {d?.claim}
               </p>
               <p className="mt-1 text-sm text-onyx">{d?.why}</p>
-              {(d?.evidence?.length ?? 0) > 0 && (
-                <div className="mt-2 flex flex-wrap gap-1">
-                  {(d?.evidence ?? []).map((e, j) => (
-                    <EvidenceChip
-                      key={j}
-                      tag={e?.tag ?? ""}
-                      quote={e?.quote ?? ""}
-                    />
-                  ))}
-                </div>
-              )}
             </div>
           ))}
         </div>
@@ -94,6 +75,60 @@ export function StrategizeTab({ state }: { state: EngineState<WinStrategy> }) {
         <SectionHeading>Competitive positioning</SectionHeading>
         <p className="mt-2 text-sm text-onyx">{data.competitivePositioning}</p>
       </Card>
+    </div>
+  );
+}
+
+function AngleBlock({
+  label,
+  summary,
+  bullets,
+  accent,
+}: {
+  label: string;
+  summary?: string;
+  bullets?: Array<{ headline?: string; body?: string } | undefined>;
+  accent: "blue" | "teal";
+}) {
+  const chipCls =
+    accent === "teal"
+      ? "border-verdigris/50 bg-verdigris/10 text-verdigris"
+      : "border-aberdeen-blue/40 bg-aberdeen-blue/[0.05] text-aberdeen-blue";
+  return (
+    <div>
+      <div className="flex items-center gap-2">
+        <span
+          className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest ${chipCls}`}
+        >
+          {label}
+        </span>
+        {summary && (
+          <p className="text-sm font-medium text-aberdeen-blue">{summary}</p>
+        )}
+      </div>
+      <ul className="mt-3 flex flex-col gap-2">
+        {(bullets ?? []).map((b, i) => (
+          <li
+            key={i}
+            className="flex gap-2 text-sm leading-relaxed text-onyx"
+          >
+            <span
+              className={`mt-1.5 h-1 w-1 flex-shrink-0 rounded-full ${
+                accent === "teal" ? "bg-verdigris" : "bg-aberdeen-blue"
+              }`}
+            />
+            <span>
+              {b?.headline && (
+                <span className="font-semibold text-aberdeen-blue">
+                  {b.headline}
+                  {b?.body ? " — " : ""}
+                </span>
+              )}
+              {b?.body}
+            </span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
