@@ -238,3 +238,23 @@ assets/                       # Aberdeen brand assets (logos, slide master, styl
 ```
 
 </details>
+
+---
+
+## Hackathon submission
+
+This repo is Aberdeen Hackathon 2026 team **hack-team-05**'s submission.
+
+**The prompt**
+
+> A consulting firm receives an attractive RFP but has only seven days to respond, and its competitors are likely to submit similar credentials and generic approaches. The pursuit team needs to demonstrate that it understands the client's problem, not merely describe its capabilities. Build an AI-powered business development assistant designed to help teams rapidly create first drafts of proposals, pitch materials, and pursuit strategies.
+
+**Repo landmarks**
+
+| Path | What's inside |
+| --- | --- |
+| `app/`, `components/`, `lib/` | The Pursuit Copilot Next.js application described above. |
+| [`reference/mock-rfps/`](reference/mock-rfps/) | Three fictional sample RFPs used as test input: Cascadia Outdoor Brands (IT/ERP modernization), Sonora Iced Tea (five-year cost and margin strategy), and Wayfarer Market Co. (growth without eroding crew culture). Each carries requirements and a weighted scoring rubric the tool answers against. |
+| [`docs/`](docs/) | Build notes and output specs — Response Action definitions, proposal layout conventions, and the README screenshots. |
+| [`deliverables/`](deliverables/) | Submission presentation deck. |
+| `.claude/skills/aberdeen-branding/` | Reusable Aberdeen-branded exporter skills for Claude. |
