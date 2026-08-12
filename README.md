@@ -37,7 +37,11 @@
 </p>
 
 <p align="center">
-  <img src="docs/images/landing-hero.png" alt="Pursuit Concierge landing hero" width="960" />
+  <img src="docs/images/demo.gif" alt="Pursuit Concierge in action — landing, launcher, workspace tabs streaming in, on-brand deck export" width="900" />
+</p>
+
+<p align="center">
+  <sub><em>Live demo — landing → drop the RFP → workspace fills tab-by-tab → on-brand deliverables. ~20 seconds.</em></sub>
 </p>
 
 ---
