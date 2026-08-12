@@ -10,6 +10,33 @@
 </p>
 
 <p align="center">
+  <strong>👉 Live at <a href="https://pursuit-copilot.vercel.app">pursuit-copilot.vercel.app</a></strong>
+</p>
+
+<p align="center">
+  <img alt="status: live" src="https://img.shields.io/badge/status-LIVE-2ea44f?style=flat-square" />
+  <img alt="deployed on Vercel" src="https://img.shields.io/badge/deployed%20on-Vercel-000?style=flat-square&logo=vercel&logoColor=white" />
+  <img alt="built in one day" src="https://img.shields.io/badge/built%20in-one%20day-44B0B1?style=flat-square&labelColor=09375F" />
+  <img alt="human element: always first" src="https://img.shields.io/badge/human%20element-always%20first-44B0B1?style=flat-square&labelColor=09375F" />
+  <img alt="RFP to pursuit brief: 6 minutes" src="https://img.shields.io/badge/RFP%20%E2%86%92%20pursuit%20brief-6%20minutes-F7D002?style=flat-square&labelColor=09375F" />
+</p>
+
+<p align="center">
+  <img alt="Next.js 16" src="https://img.shields.io/badge/Next.js-16-000?style=flat-square&logo=next.js&logoColor=white" />
+  <img alt="Claude Opus 4.7 + Sonnet 4.6" src="https://img.shields.io/badge/Claude-Opus%204.7%20%2B%20Sonnet%204.6-D97757?style=flat-square" />
+  <img alt="Upstash Vector 1536-dim" src="https://img.shields.io/badge/Upstash%20Vector-1536--dim-00E9A3?style=flat-square" />
+  <img alt="Aberdeen Blue + Verdigris" src="https://img.shields.io/badge/palette-Aberdeen%20Blue%20%2B%20Verdigris-44B0B1?style=flat-square&labelColor=09375F" />
+</p>
+
+<p align="center">
+  <img alt="fabricated case studies: 0" src="https://img.shields.io/badge/fabricated%20case%20studies-0-2ea44f?style=flat-square" />
+  <img alt="exposed client names: 0" src="https://img.shields.io/badge/exposed%20client%20names-0-2ea44f?style=flat-square" />
+  <img alt="hallucinated citations: 0" src="https://img.shields.io/badge/hallucinated%20citations-0-2ea44f?style=flat-square" />
+  <img alt="7-day pursuits closed in: 60 minutes" src="https://img.shields.io/badge/7--day%20pursuits%20closed%20in-60%20minutes-DB504A?style=flat-square" />
+  <img alt="coffee: overflowing" src="https://img.shields.io/badge/coffee-overflowing-8B4513?style=flat-square&labelColor=333" />
+</p>
+
+<p align="center">
   <img src="docs/images/landing-hero.png" alt="Pursuit Concierge landing hero" width="960" />
 </p>
 
