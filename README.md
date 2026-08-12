@@ -2,7 +2,7 @@
   <img src="assets/Aberdeen Primary Logo - Blue.svg" alt="Aberdeen Advisors" width="240" />
 </p>
 
-<h1 align="center">Pursuit Copilot</h1>
+<h1 align="center">Pursuit Concierge</h1>
 
 <p align="center">
   <strong>The control tower for a single RFP.</strong><br/>
@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/images/landing-hero.png" alt="Pursuit Copilot landing hero" width="960" />
+  <img src="docs/images/landing-hero.png" alt="Pursuit Concierge landing hero" width="960" />
 </p>
 
 ---
@@ -28,13 +28,13 @@ Consulting firms typically receive attractive RFPs on tight timelines — often 
 
 Doing this manually consumes hours or days **before the team even starts producing the proposal**. Competitors are all working from the same starting point. The result is late nights, generic responses, and pursuits that lose on differentiation rather than merit.
 
-**Pursuit Copilot turns that first week into a first hour.** Drop the RFP, click one button, and you get a pursuit brief and proposal starter grounded in Aberdeen's own Culture Charter, case studies, and prior proposals — with the human element leading every claim.
+**Pursuit Concierge turns that first week into a first hour.** Drop the RFP, click one button, and you get a pursuit brief and proposal starter grounded in Aberdeen's own Culture Charter, case studies, and prior proposals — with the human element leading every claim.
 
 ---
 
 ## What it does, in one hour
 
-You upload an RFP. The copilot runs five engines in sequence, streaming results into a live workspace.
+You upload an RFP. The concierge runs five engines in sequence, streaming results into a live workspace.
 
 | Engine | Question it answers | What you get |
 | --- | --- | --- |
@@ -46,7 +46,7 @@ You upload an RFP. The copilot runs five engines in sequence, streaming results 
 
 Every output is:
 
-- **Grounded** — every claim about Aberdeen is backed by real content from the Armory (case studies, culture charter, services, prior proposals). No fabrication. If the Armory doesn't support a claim, the copilot says "Not evidenced" and drops it.
+- **Grounded** — every claim about Aberdeen is backed by real content from the Armory (case studies, culture charter, services, prior proposals). No fabrication. If the Armory doesn't support a claim, the concierge says "Not evidenced" and drops it.
 - **Cited** — behind every Aberdeen fact is a source document you can open.
 - **Anonymized** — real client names in the Armory become descriptors like "a $1B revenue healthcare firm" in every displayed and exported output.
 
@@ -54,7 +54,7 @@ Every output is:
 
 ## The human element — first
 
-Aberdeen's strongest differentiator is not our technical capabilities. It's how we work. The copilot enforces this: **the human element leads every win theme, every point of view, every Why-Aberdeen passage.** Technical differentiators support the story — they never open it.
+Aberdeen's strongest differentiator is not our technical capabilities. It's how we work. The concierge enforces this: **the human element leads every win theme, every point of view, every Why-Aberdeen passage.** Technical differentiators support the story — they never open it.
 
 The Culture Charter, the referral-based workforce, the Inc 5000 recognition, the low-ego / high-ownership operating posture — these appear at the top of every draft.
 
@@ -65,7 +65,7 @@ The Culture Charter, the referral-based workforce, the Inc 5000 recognition, the
 ### 1. Drop the RFP
 
 <p align="center">
-  <img src="docs/images/launcher.png" alt="Pursuit Copilot launcher" width="900" />
+  <img src="docs/images/launcher.png" alt="Pursuit Concierge launcher" width="900" />
 </p>
 
 Give the pursuit a short name (something recognizable to your team), optionally give the client's real name (it will be anonymized in every output), and drop the RFP file. PDF, DOCX, or TXT — up to 40 MB. Click **Analyze Opportunity**.
@@ -101,13 +101,13 @@ Two buttons in the workspace header:
   - Human Element manifesto slide (full-bleed navy) with a pull quote from Why Aberdeen
   - Closer with "Low ego. High ownership. Let's build the response."
 
-Both deliverables are drop-in review-ready for a partner or practice lead. They are drafts, not final proposals — the copilot's job is to save the first four days of a seven-day pursuit.
+Both deliverables are drop-in review-ready for a partner or practice lead. They are drafts, not final proposals — the concierge's job is to save the first four days of a seven-day pursuit.
 
 ---
 
 ## What it does *not* do
 
-- **It does not fabricate.** If the Armory doesn't have evidence for a claim about Aberdeen, the copilot writes "Not evidenced in Armory" — not a generic-sounding boast.
+- **It does not fabricate.** If the Armory doesn't have evidence for a claim about Aberdeen, the concierge writes "Not evidenced in Armory" — not a generic-sounding boast.
 - **It does not expose real client names.** All Armory content is anonymized at output. The internal Armory index still knows the real names — the pursuit team can trace back — but nothing displayed or exported names a real prior client.
 - **It does not replace the pursuit team.** It replaces the first 60% of the work — reading, extracting, retrieving, structuring, drafting. Partners still shape the win narrative, edit the prose, and make the calls.
 
@@ -115,7 +115,7 @@ Both deliverables are drop-in review-ready for a partner or practice lead. They 
 
 ## The Armory
 
-The copilot's grounding comes from the **Pursuit Armory** — a folder in Aberdeen's SharePoint that holds:
+The concierge's grounding comes from the **Pursuit Armory** — a folder in Aberdeen's SharePoint that holds:
 
 - Case studies and prior engagement descriptions
 - Prior RFP responses
@@ -123,7 +123,7 @@ The copilot's grounding comes from the **Pursuit Armory** — a folder in Aberde
 - Culture Charter and value proposition materials
 - Service offerings and delivery methodologies
 
-An admin syncs the folder once (`npm run armory:sync`); the copilot indexes the content and uses it as grounded context for every engine call. The index refreshes on demand when the Armory changes.
+An admin syncs the folder once (`npm run armory:sync`); the concierge indexes the content and uses it as grounded context for every engine call. The index refreshes on demand when the Armory changes.
 
 ---
 
@@ -131,7 +131,7 @@ An admin syncs the folder once (`npm run armory:sync`); the copilot indexes the 
 
 | Guardrail | What it means |
 | --- | --- |
-| **No invention** | If the Armory doesn't support a claim, the copilot says "Not evidenced" instead of guessing. |
+| **No invention** | If the Armory doesn't support a claim, the concierge says "Not evidenced" instead of guessing. |
 | **Real citations** | Every claim about Aberdeen is backed by a source document. |
 | **Anonymized clients** | Real client names become descriptors in every displayed and exported output. |
 | **Human element first** | Culture and people always open the narrative — technology supports it. |
@@ -253,8 +253,8 @@ This repo is Aberdeen Hackathon 2026 team **hack-team-05**'s submission.
 
 | Path | What's inside |
 | --- | --- |
-| `app/`, `components/`, `lib/` | The Pursuit Copilot Next.js application described above. |
+| `app/`, `components/`, `lib/` | The Pursuit Concierge Next.js application described above. |
 | [`reference/mock-rfps/`](reference/mock-rfps/) | Three fictional sample RFPs used as test input: Cascadia Outdoor Brands (IT/ERP modernization), Sonora Iced Tea (five-year cost and margin strategy), and Wayfarer Market Co. (growth without eroding crew culture). Each carries requirements and a weighted scoring rubric the tool answers against. |
 | [`docs/`](docs/) | Build notes and output specs — Response Action definitions, proposal layout conventions, and the README screenshots. |
-| [`deliverables/`](deliverables/) | Submission presentation deck. |
+| [`deliverables/pursuit-concierge-aberdeen-hackathon-team-05.pptx`](deliverables/pursuit-concierge-aberdeen-hackathon-team-05.pptx) | Submission presentation deck. |
 | `.claude/skills/aberdeen-branding/` | Reusable Aberdeen-branded exporter skills for Claude. |
