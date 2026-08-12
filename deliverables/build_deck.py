@@ -384,7 +384,7 @@ add_text(s4, M_L + 0.32, sy + 0.16, CONTENT_W - 0.64, 1.24,
 
 s4.notes_slide.notes_text_frame.text = (
     "The 80% is CJ's target for the pilot to test, not an achieved result. Same for the "
-    "5-10 people / 1-2 weeks / 40+ hours figures on slide 1 — they are his illustration "
+    "5-10 people / 1-2 weeks / 40+ hours figures on slide 1 — they are CJ's illustration "
     "of a typical pursuit. Do not present either as measured.\n\n"
     "CJ's brand promise, in full: \"Working with Aberdeen should feel easier after every "
     "interaction.\" Every touchpoint should reduce stress, not add it. The experience we "
