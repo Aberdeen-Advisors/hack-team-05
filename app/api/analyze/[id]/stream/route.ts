@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
-import { loadPursuit } from "@/lib/pursuit/store";
+import {
+  loadPursuit,
+  loadCachedResults,
+  saveEngineResult,
+  markRunDone,
+} from "@/lib/pursuit/store";
 import { orchestrate, type EngineEvent } from "@/lib/engines/orchestrate";
+import type { EngineName } from "@/lib/engines/run";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -8,8 +14,9 @@ export const dynamic = "force-dynamic";
 
 /**
  * GET /api/analyze/[id]/stream
- * Server-sent events stream: emits engine start / delta / done / error events.
- * The workspace page consumes this with EventSource.
+ * SSE stream — replays cached engine results if present, then orchestrates
+ * any missing engines. Full cache hits complete in milliseconds so the
+ * workspace refreshes / bookmarks / screenshots don't re-burn LLM tokens.
  */
 export async function GET(
   _req: Request,
@@ -21,6 +28,8 @@ export async function GET(
     return NextResponse.json({ error: "not found" }, { status: 404 });
   }
 
+  const cached = await loadCachedResults(id);
+
   const encoder = new TextEncoder();
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
@@ -29,17 +38,64 @@ export async function GET(
         controller.enqueue(encoder.encode(chunk));
       };
 
-      // Heartbeat every 20s so proxies don't close the stream idle.
       const heartbeat = setInterval(() => {
         try {
           controller.enqueue(encoder.encode(": keepalive\n\n"));
         } catch {
-          // stream closed; timer will be cleared below
+          // stream closed
         }
       }, 20000);
 
       try {
-        await orchestrate(pursuit, send);
+        // Replay any cached engines instantly. This handles page refreshes,
+        // multi-tab, and screenshotting without re-running the LLM.
+        const engines: EngineName[] = [
+          "understand",
+          "strategize",
+          "match",
+          "design",
+          "create",
+        ];
+        const missing: EngineName[] = [];
+        for (const engine of engines) {
+          const r = (cached as Record<string, unknown>)[engine];
+          if (r) {
+            send({ type: "engine.start", engine });
+            send({ type: "engine.done", engine, result: r });
+          } else {
+            missing.push(engine);
+          }
+        }
+
+        if (missing.length === 0 && cached.runDone) {
+          send({ type: "run.done" });
+        } else {
+          // Persist each engine result as it completes so subsequent loads
+          // are cache hits.
+          const persistingSend = async (
+            event:
+              | EngineEvent
+              | { type: "run.error"; error: string },
+          ) => {
+            if (event.type === "engine.done") {
+              try {
+                await saveEngineResult(id, event.engine, event.result);
+              } catch (err) {
+                console.error("[stream] cache write failed", err);
+              }
+            }
+            if (event.type === "run.done") {
+              try {
+                await markRunDone(id);
+              } catch (err) {
+                console.error("[stream] cache mark run.done failed", err);
+              }
+            }
+            send(event);
+          };
+
+          await orchestrate(pursuit, persistingSend);
+        }
       } catch (err) {
         send({
           type: "run.error",

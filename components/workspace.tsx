@@ -52,10 +52,28 @@ const ENGINE_LABELS: Record<EngineName, string> = {
   create: "Create",
 };
 
+const VALID_TABS: EngineName[] = [
+  "understand",
+  "strategize",
+  "match",
+  "design",
+  "create",
+];
+
 export function Workspace({ pursuit }: { pursuit: PursuitRecord }) {
   const [state, setState] = useState<RunState>(INITIAL);
   const [activeTab, setActiveTab] = useState<EngineName>("understand");
   const [runDone, setRunDone] = useState(false);
+
+  // Pick up initial tab from URL hash (e.g., /workspace/xyz#strategize).
+  // Runs after hydration so it works with SSR-rendered pages.
+  useEffect(() => {
+    const h = window.location.hash.replace("#", "");
+    if (VALID_TABS.includes(h as EngineName)) {
+      setActiveTab(h as EngineName);
+    }
+  }, []);
+
   const [runError, setRunError] = useState<string | null>(null);
   const [exporting, setExporting] = useState<null | "pptx" | "docx">(null);
 
@@ -85,7 +103,6 @@ export function Workspace({ pursuit }: { pursuit: PursuitRecord }) {
             ...s,
             [data.engine]: { ...s[data.engine], status: "running" },
           }));
-          setActiveTab(data.engine);
         } else if (data.type === "engine.delta") {
           setState((s) => ({
             ...s,

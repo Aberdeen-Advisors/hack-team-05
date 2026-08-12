@@ -69,7 +69,7 @@ export async function orchestrate(
       for await (const partial of stream.partialObjectStream) {
         await onEvent({ type: "engine.delta", engine, partial });
       }
-      const result = (await stream.object) as T;
+      const result = scrubCitationTokens(await stream.object) as T;
       await onEvent({ type: "engine.done", engine, result });
       return result;
     } catch (err) {
@@ -108,3 +108,27 @@ export async function orchestrate(
 }
 
 export type OrchestrateResults = Awaited<ReturnType<typeof orchestrate>>;
+
+/**
+ * Strip internal [C#] citation tokens from every string in the engine output
+ * and drop evidence arrays. The tokens map to Armory chunks the reader never
+ * sees, so they're noise everywhere they're displayed.
+ */
+function scrubCitationTokens(input: unknown): unknown {
+  if (typeof input === "string") {
+    return input
+      .replace(/\s*\[C\d+(?:\s*,\s*C\d+)*\]\s*/gi, " ")
+      .replace(/\s{2,}/g, " ")
+      .trim();
+  }
+  if (Array.isArray(input)) return input.map(scrubCitationTokens);
+  if (input && typeof input === "object") {
+    const o: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(input as Record<string, unknown>)) {
+      if (k === "evidence") continue;
+      o[k] = scrubCitationTokens(v);
+    }
+    return o;
+  }
+  return input;
+}

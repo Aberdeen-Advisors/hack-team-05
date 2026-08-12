@@ -72,34 +72,94 @@ Give the pursuit a short name (something recognizable to your team), optionally 
 
 ### 2. Watch the workspace fill
 
-Five tabs light up in sequence — Understand, Strategize, Match, Design, Create. Total analysis time is typically 2–6 minutes depending on RFP length.
+Five tabs light up in sequence — Understand, Strategize, Match, Design, Create. Total analysis time is typically 2–6 minutes depending on RFP length. Screenshots below are from a real run against a fictional Cascadia Outdoor Brands RFP.
 
-**Understand tab — requirements matrix with Response Actions.** Every requirement in the RFP is bucketed by category, mandatory-vs-optional, and — most importantly — the **Response Action** the pursuit team needs to take: *Address* (explain how we'd meet it), *Provide Information*, *Provide Attachment*, *Acknowledge/Confirm*, or *Deliverable if Awarded*. Definitions are inline as a legend.
+#### Understand — what does this client actually need?
 
-**Understand tab — timeline.** Key dates and intermediate milestones plotted along a single horizontal bar so the team can see the pursuit window at a glance.
+Anonymized client descriptor, key objectives, and pain points — extracted straight from the RFP.
 
-**Strategize tab — win themes.** Each theme has a **Human** angle followed by a **Technical** angle. Bullets lead with a bolded phrase and a short explanation — not paragraphs.
+<p align="center">
+  <img src="docs/images/tab-understand.png" alt="Understand tab — client + objectives + pain points" width="960" />
+</p>
 
-**Design tab — staffing model.** Roles, responsibilities, and allocation percentages sized to the engagement.
+Every requirement in the RFP is bucketed by category, mandatory-vs-optional, and — most importantly — the **Response Action** the pursuit team needs to take: *Address* (explain how we'd meet it), *Provide Information*, *Provide Attachment*, *Acknowledge/Confirm*, or *Deliverable if Awarded*. Definitions are inline as a legend below the table.
 
-**Design tab — delivery timeline.** Post-award milestones plotted the same way as the pursuit window.
+<p align="center">
+  <img src="docs/images/requirements-matrix.png" alt="Requirements matrix with Response Action column and legend" width="960" />
+</p>
 
-**Create tab — proposal outline and first-draft sections.** A full outline, plus written prose for the Executive Summary, Our Understanding, and Proposed Approach — ready for a partner to red-line.
+Key dates and intermediate milestones are plotted along a single horizontal bar so the team can see the whole pursuit window at a glance.
+
+<p align="center">
+  <img src="docs/images/timeline-gantt.png" alt="Pursuit timeline Gantt" width="960" />
+</p>
+
+#### Strategize — how do we win?
+
+Aberdeen's point of view opens the tab. Beneath it, 3–4 win themes each carry a **Human** angle followed by a **Technical** angle. Bullets lead with a bolded headline and a short explanation — not paragraphs. The human element always opens the argument; the technical delivery supports it.
+
+<p align="center">
+  <img src="docs/images/tab-strategize.png" alt="Strategize tab — win themes with Human angle first, Technical second" width="960" />
+</p>
+
+#### Match — what proves our claims?
+
+Ranked evidence from the Armory, tied to specific requirement phrases. Real prior client names appear only as anonymized descriptors ("a large publicly traded athletic and prosthetic services company"), never as filenames or raw identifiers. Gaps are flagged honestly at the bottom.
+
+<p align="center">
+  <img src="docs/images/tab-match.png" alt="Match tab — evidence map with anonymized client descriptors" width="960" />
+</p>
+
+#### Design — what should we propose?
+
+Solution blueprint with workstreams, a staffing model sized to the RFP (with allocation percentages), and a delivery timeline.
+
+<p align="center">
+  <img src="docs/images/staffing-model.png" alt="Staffing model — roles, responsibilities, allocation percentages" width="960" />
+</p>
+
+Post-award delivery milestones plotted the same way as the pursuit window — milestone markers alternate above/below the bar so long labels don't collide.
+
+<p align="center">
+  <img src="docs/images/delivery-timeline.png" alt="Delivery timeline — post-award milestones on a single horizontal bar" width="960" />
+</p>
+
+#### Create — how do we communicate it?
+
+A full proposal outline, plus first-draft prose for the Executive Summary, Our Understanding, and Proposed Approach — ready for a partner to red-line. The outline is intentionally reviewable by a human before drafting the sections underneath.
+
+<p align="center">
+  <img src="docs/images/tab-create.png" alt="Create tab — reviewable proposal outline + first-draft sections" width="960" />
+</p>
 
 ### 3. Export the deliverables
 
-Two buttons in the workspace header:
+Two buttons in the workspace header. Both files land as `.pptx` and `.docx` in your Downloads folder, ready to open in Office.
 
-- **Export Word** — a `.docx` proposal starter in Aberdeen brand colors and Poppins. Executive Summary → Our Understanding → Proposed Approach → Relevant Experience → Team → Why Aberdeen → Requirements Matrix appendix with the Response Action column and legend.
-- **Export Deck** — a `.pptx` executive deck built in Aberdeen brand colors:
-  - Cover slide with the opportunity name and anonymized client descriptor
-  - Section dividers with large numbered chapter marks
-  - Understanding slide with 3 columns (Objectives · Pain Points · Risks) and a bottom teal chevron banner with the scope statement
-  - One slide per win theme — Human column on the left, Technical column on the right, both with headline-and-body bullets
-  - One slide per relevant experience match — anonymized client descriptor as the title, why-relevant paragraph, outcome callout
-  - Approach slide with 3 workstream tiles
-  - Human Element manifesto slide (full-bleed navy) with a pull quote from Why Aberdeen
-  - Closer with "Low ego. High ownership. Let's build the response."
+#### Executive deck (.pptx)
+
+Built in Aberdeen brand colors (Aberdeen Blue + Verdigris teal) and Poppins. Cover slide shows the opportunity name and the anonymized client descriptor — never a real name.
+
+<p align="center">
+  <img src="docs/images/export-deck-cover.png" alt="Executive deck cover slide" width="960" />
+</p>
+
+The rest of the deck follows this structure:
+- Section dividers with large numbered chapter marks (`01 · Our Understanding`, `02 · Win Themes`, `03 · Relevant Experience`, `04 · Design`, `05 · The Human Element`).
+- Understanding slide with 3 columns (Objectives · Pain Points · Risks) and a bottom teal chevron banner with the scope statement.
+- **One slide per win theme** — Human column on the left, Technical column on the right, both with headline-and-body bullets.
+- **One slide per relevant experience match** — anonymized client descriptor as the title, why-relevant paragraph, outcome callout, and requirements addressed.
+- Approach slide with 3 workstream tiles.
+- Human Element manifesto slide (full-bleed navy) with a pull quote from *Why Aberdeen*.
+- Closer with "Low ego. High ownership. Let's build the response."
+
+#### Proposal starter (.docx)
+
+Executive Summary → Our Understanding → Proposed Approach → Relevant Experience → Team → Why Aberdeen → Requirements Matrix appendix with the Response Action column and legend. Aberdeen brand colors on section headers, Poppins throughout.
+
+<p align="center">
+  <img src="docs/images/export-docx-page1.png" alt="Proposal starter DOCX first page" width="640" />
+</p>
 
 Both deliverables are drop-in review-ready for a partner or practice lead. They are drafts, not final proposals — the concierge's job is to save the first four days of a seven-day pursuit.
 
