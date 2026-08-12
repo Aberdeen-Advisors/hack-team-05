@@ -32,8 +32,19 @@ MUTED_WHITE = RGBColor(0xD9, 0xE1, 0xEA)
 FONT = "Calibri"
 QUOTE_FONT = "Georgia"
 
+# Product name as the app's own interface brands it ("PURSUIT COPILOT · ABERDEEN
+# ADVISORS" on the landing page). Repo filename is unchanged.
+PRODUCT = "Pursuit Copilot"
+
+# Title-slide tagline. Swap this one line to change the slide.
+# Alternative the team may prefer: "Because winning work shouldn't wear people out."
+TAGLINE = "Do the thinking that matters. Let AI handle the grind."
+
 M_L = 0.62          # left margin (in)
 CONTENT_W = 12.09   # usable width (in)
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+UI_SHOT = os.path.join(HERE, "assets", "ui-workspace.png")
 
 boxes_for_check = []
 
@@ -95,6 +106,29 @@ def add_rect(slide, x, y, w, h, fill=None, line=None, line_w=1.0,
     return sh
 
 
+def add_picture_fit(slide, path, x, y, w, h, border=NAVY, border_w=1.0,
+                    valign="top"):
+    """Place an image inside the box (x, y, w, h), preserving aspect ratio.
+
+    The image is letterboxed inside the box (never stretched), horizontally
+    centred, and framed with a thin outline so it reads as a screenshot.
+    Returns (left, top, width, height) in inches.
+    """
+    pic = slide.shapes.add_picture(path, 0, 0, width=Inches(w))
+    if pic.height > Inches(h):
+        pic.width = int(pic.width * Inches(h) / pic.height)
+        pic.height = Inches(h)
+    pic.left = Inches(x) + (Inches(w) - pic.width) // 2
+    pic.top = Inches(y) if valign == "top" else Inches(y) + (Inches(h) - pic.height) // 2
+    if border is not None:
+        # Outline as its own shape: drawn after the picture, so it frames it.
+        frame = add_rect(slide, 0, 0, 1, 1, fill=None, line=border, line_w=border_w)
+        frame.left, frame.top = pic.left, pic.top
+        frame.width, frame.height = pic.width, pic.height
+    return (pic.left / 914400, pic.top / 914400,
+            pic.width / 914400, pic.height / 914400)
+
+
 def slide_frame(prs, headline, kicker=None, page=None):
     slide = prs.slides.add_slide(prs.slide_layouts[6])
     add_rect(slide, 0, 0, 13.333, 0.16, fill=NAVY)
@@ -138,22 +172,25 @@ add_rect(s1, 0, 0, 13.333, 0.16, fill=NAVY)
 add_text(s1, M_L, 0.55, CONTENT_W, 0.26,
          [{"text": "ABERDEEN HACKATHON  ·  TEAM 05", "size": 11.5, "bold": True,
            "color": ACCENT, "spc": 1.4}], label="s1 kicker")
-add_text(s1, M_L, 0.86, 8.6, 0.7,
-         [{"text": "RFP Pursuit Copilot", "size": 40, "bold": True, "color": NAVY,
+add_text(s1, M_L, 0.84, 8.6, 0.66,
+         [{"text": PRODUCT, "size": 40, "bold": True, "color": NAVY,
            "line": 0.95}], label="s1 title")
-add_text(s1, M_L, 1.62, 9.3, 0.64,
+add_text(s1, M_L, 1.50, 9.3, 0.30,
+         [{"text": TAGLINE, "size": 17, "bold": True, "color": ACCENT, "line": 1.0}],
+         label="s1 tagline")
+add_text(s1, M_L, 1.86, 9.3, 0.58,
          [{"text": "One action turns a 30–80 page RFP into a Pursuit Brief and a Proposal "
                    "Starter — a real point of view on the client, plus the opening sections "
                    "already drafted.",
            "size": 15, "color": SLATE, "line": 1.1}], label="s1 oneliner")
 
-add_rect(s1, M_L, 2.34, 1.5, 0.045, fill=ACCENT)
+add_rect(s1, M_L, 2.48, 1.5, 0.045, fill=ACCENT)
 
-add_text(s1, M_L, 2.62, 11.4, 0.5,
+add_text(s1, M_L, 2.70, 11.4, 0.5,
          [{"text": "Seven days to respond. And every bidder sounds the same.",
            "size": 27, "bold": True, "color": NAVY, "line": 0.98}], label="s1 problem hl")
 
-add_text(s1, M_L, 3.16, 11.4, 0.58,
+add_text(s1, M_L, 3.22, 11.4, 0.58,
          [{"text": "A typical RFP response takes 5–10 people, 1–2 weeks, and 40+ hours "
                    "each — the BD lead, a partner and the SMEs, all pulled off client work "
                    "in the same week.",
@@ -205,7 +242,7 @@ s1.notes_slide.notes_text_frame.text = (
 
 # ========================= SLIDE 2 — THE SOLUTION ===========================
 s2, y = slide_frame(prs, "Upload the RFP. Get a point of view, not a template.",
-                    kicker="THE SOLUTION  ·  RFP PURSUIT COPILOT", page="2 / 4")
+                    kicker="THE SOLUTION  ·  " + PRODUCT.upper(), page="2 / 4")
 
 flow = [
     ("01  INGEST", "The RFP, plus Aberdeen credentials, prior proposals and case studies."),
@@ -309,17 +346,13 @@ add_text(s3, M_L, sy + 0.12, 7.05, 0.52,
            "size": 13, "italic": True, "color": SLATE, "line": 1.1}], label="s3 close")
 
 phx, phy, phw, phh = 8.14, y, 4.57, 4.44
-add_rect(s3, phx, phy, phw, phh, fill=LIGHT, line=SLATE, line_w=1.25, dash=True)
-add_text(s3, phx + 0.3, phy + 1.86, phw - 0.6, 1.0,
-         [{"text": "[ Screenshot: paste UI capture here ]", "size": 14, "bold": True,
-           "color": SLATE, "align": PP_ALIGN.CENTER, "space_after": 7},
-          {"text": "Front end built; backend in progress at time of writing.",
-           "size": 12, "italic": True, "color": SLATE, "align": PP_ALIGN.CENTER}],
-         align=PP_ALIGN.CENTER, label="s3 placeholder")
-add_text(s3, phx, phy + phh + 0.16, phw, 0.3,
-         [{"text": "Live walkthrough delivered in the demo slot.", "size": 12,
-           "color": SLATE, "align": PP_ALIGN.CENTER}], align=PP_ALIGN.CENTER,
-         label="s3 ph caption")
+_, _, _, pic_h = add_picture_fit(s3, UI_SHOT, phx, phy, phw, phh,
+                                 border=NAVY, border_w=1.0)
+add_text(s3, phx, phy + pic_h + 0.16, phw, 0.70,
+         [{"text": "The pursuit workspace: the five engines — Understand, Strategize, "
+                   "Match, Design, Create — and the requirements bucket they produce.",
+           "size": 12, "color": SLATE, "align": PP_ALIGN.CENTER, "line": 1.1}],
+         align=PP_ALIGN.CENTER, label="s3 ui caption")
 
 s3.notes_slide.notes_text_frame.text = (
     "Wayfarer Market Co. is one of the three mock RFPs in reference/mock-rfps. Walk "
@@ -393,7 +426,6 @@ s4.notes_slide.notes_text_frame.text = (
     "Baselines get set during the pilot. Nothing is claimed today."
 )
 
-HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "hack-team-05-pursuit-copilot-deck.pptx")
 prs.save(OUT)
 print("saved", OUT)
