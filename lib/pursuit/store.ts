@@ -1,13 +1,42 @@
-import { promises as fs } from "node:fs";
-import path from "node:path";
-import os from "node:os";
+import { Index } from "@upstash/vector";
 import type { ParsedRfp } from "@/lib/rfp/parse";
 
-const DIR = path.join(os.tmpdir(), "aberdeen-pursuits");
+/**
+ * Persistence for pursuit records and cached engine results.
+ * Uses the existing Upstash Vector index (same store as the Armory) with
+ * synthetic sentinel vectors that never surface in similarity search — so
+ * we don't need a separate KV / Blob integration for persistence and the
+ * whole app runs on a single external data store.
+ */
 
-async function ensureDir() {
-  await fs.mkdir(DIR, { recursive: true });
+let _index: Index | null = null;
+
+function getIndex(): Index {
+  if (_index) return _index;
+  const url = process.env.UPSTASH_VECTOR_REST_URL;
+  const token = process.env.UPSTASH_VECTOR_REST_TOKEN;
+  if (!url || !token) {
+    throw new Error(
+      "UPSTASH_VECTOR_REST_URL / UPSTASH_VECTOR_REST_TOKEN not set.",
+    );
+  }
+  _index = new Index({ url, token });
+  return _index;
 }
+
+/**
+ * Distinct sentinel vectors for pursuit records + cached results — different
+ * "1-hot" positions so they never collide with each other or with real text
+ * embeddings. Dimension matches text-embedding-3-small = 1536.
+ */
+const DIM = 1536;
+function sentinel(hotIndex: number): number[] {
+  const v = new Array(DIM).fill(0);
+  v[hotIndex] = 1;
+  return v;
+}
+const PURSUIT_SENTINEL = 1;
+const RESULTS_SENTINEL = 2;
 
 export type PursuitRecord = {
   id: string;
@@ -17,18 +46,34 @@ export type PursuitRecord = {
   rfp: ParsedRfp;
 };
 
+const pursuitId = (id: string) => `pursuit:${id}`;
+const resultsId = (id: string) => `pursuit-results:${id}`;
+
+// ── Pursuit records ────────────────────────────────────────────────
+
 export async function savePursuit(record: PursuitRecord): Promise<void> {
-  await ensureDir();
-  await fs.writeFile(path.join(DIR, `${record.id}.json`), JSON.stringify(record), "utf8");
+  const index = getIndex();
+  await index.upsert([
+    {
+      id: pursuitId(record.id),
+      vector: sentinel(PURSUIT_SENTINEL),
+      metadata: { pursuit: JSON.stringify(record) },
+    },
+  ]);
 }
 
 export async function loadPursuit(id: string): Promise<PursuitRecord | null> {
   try {
-    const raw = await fs.readFile(path.join(DIR, `${id}.json`), "utf8");
+    const index = getIndex();
+    const recs = await index.fetch([pursuitId(id)], { includeMetadata: true });
+    const first = recs?.[0];
+    if (!first?.metadata) return null;
+    const raw = (first.metadata as Record<string, unknown>).pursuit;
+    if (typeof raw !== "string") return null;
     return JSON.parse(raw) as PursuitRecord;
   } catch (err) {
-    if ((err as NodeJS.ErrnoException).code === "ENOENT") return null;
-    throw err;
+    console.error("[pursuit.load] failed", err);
+    return null;
   }
 }
 
@@ -37,8 +82,8 @@ export function newPursuitId(): string {
 }
 
 // ── Cached engine results ──────────────────────────────────────────
-// So the workspace loads instantly on refresh (and headless screenshotting
-// works) without re-running 5–6 minutes of LLM calls each time.
+// So the workspace loads instantly on refresh and screenshots don't
+// re-burn 5–6 minutes of LLM calls each time.
 
 export type CachedResults = Partial<{
   understand: unknown;
@@ -49,8 +94,33 @@ export type CachedResults = Partial<{
   runDone: boolean;
 }>;
 
-function resultsPath(id: string): string {
-  return path.join(DIR, `${id}.results.json`);
+export async function loadCachedResults(id: string): Promise<CachedResults> {
+  try {
+    const index = getIndex();
+    const recs = await index.fetch([resultsId(id)], { includeMetadata: true });
+    const first = recs?.[0];
+    if (!first?.metadata) return {};
+    const raw = (first.metadata as Record<string, unknown>).results;
+    if (typeof raw !== "string") return {};
+    return JSON.parse(raw) as CachedResults;
+  } catch (err) {
+    console.error("[results.load] failed", err);
+    return {};
+  }
+}
+
+async function writeCachedResults(
+  id: string,
+  results: CachedResults,
+): Promise<void> {
+  const index = getIndex();
+  await index.upsert([
+    {
+      id: resultsId(id),
+      vector: sentinel(RESULTS_SENTINEL),
+      metadata: { results: JSON.stringify(results) },
+    },
+  ]);
 }
 
 export async function saveEngineResult(
@@ -58,27 +128,11 @@ export async function saveEngineResult(
   engine: string,
   result: unknown,
 ): Promise<void> {
-  await ensureDir();
-  const p = resultsPath(id);
   const existing = await loadCachedResults(id);
-  const next: CachedResults = { ...existing, [engine]: result };
-  await fs.writeFile(p, JSON.stringify(next), "utf8");
+  await writeCachedResults(id, { ...existing, [engine]: result });
 }
 
 export async function markRunDone(id: string): Promise<void> {
-  await ensureDir();
   const existing = await loadCachedResults(id);
-  const next: CachedResults = { ...existing, runDone: true };
-  await fs.writeFile(resultsPath(id), JSON.stringify(next), "utf8");
+  await writeCachedResults(id, { ...existing, runDone: true });
 }
-
-export async function loadCachedResults(id: string): Promise<CachedResults> {
-  try {
-    const raw = await fs.readFile(resultsPath(id), "utf8");
-    return JSON.parse(raw) as CachedResults;
-  } catch (err) {
-    if ((err as NodeJS.ErrnoException).code === "ENOENT") return {};
-    throw err;
-  }
-}
-
