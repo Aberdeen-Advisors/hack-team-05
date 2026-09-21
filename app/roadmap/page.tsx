@@ -37,6 +37,16 @@ const SHIPPED: Item[] = [
     answers: "Judge feedback: link directly to the underlying decks",
   },
   {
+    title: "Eight response profiles, not just RFPs",
+    detail:
+      "The Understand engine classifies every inbound request - RFP, RFI, RFQ, discussion document, capability request, questionnaire, SOW, or change order - and every downstream engine shapes its output to the profile's rules: no pricing in an RFI response, no persuasion in a binding SOW, the client's template on a questionnaire.",
+  },
+  {
+    title: "Prompt caching",
+    detail:
+      "The request text and system rules form a cached prefix shared across engines, cutting input cost roughly in half on a full run.",
+  },
+  {
     title: "Owner-routed gaps, never guesses",
     detail:
       "Where only a human can supply a fact - rates, named staffing, reference permissions - the output carries [NEEDS INPUT: what - owner] instead of an invention. A flag is a success: it is the tool refusing to fabricate.",

@@ -32,8 +32,8 @@ const GUARDRAILS = [
     Icon: ShieldCheck,
   },
   {
-    title: "Real citations",
-    body: "Every claim opens the source Armory doc via a citation chip.",
+    title: "Real sources",
+    body: "Every engine lists the Armory documents it drew on, linked to the underlying source file.",
     Icon: Bookmark,
   },
   {
@@ -58,14 +58,16 @@ export default function Home() {
           <div className="flex flex-col gap-8 lg:pt-8">
             <TagChip tone="onDark">Pursuit Copilot · Aberdeen Advisors</TagChip>
             <h1 className="text-5xl font-bold leading-[1.02] tracking-tight text-white sm:text-[64px]">
-              The control tower for a single RFP.
+              The control tower for a single pursuit.
               <br />
               <span className="text-verdigris">
                 The cockpit for the pursuit portfolio.
               </span>
             </h1>
             <p className="max-w-xl text-lg font-light leading-relaxed text-white/80">
-              Drop a 30–80 page RFP. Pursuit Copilot leads with{" "}
+              Drop any inbound client request — an RFP, RFI, RFQ,
+              questionnaire, or SOW. Pursuit Copilot classifies the response
+              profile, leads with{" "}
               <span className="font-semibold text-white">
                 Aberdeen&apos;s human element
               </span>

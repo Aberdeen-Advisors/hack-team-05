@@ -229,6 +229,17 @@ export function Workspace({ pursuit }: { pursuit: PursuitRecord }) {
               <span className="rounded-full border border-border/70 px-2 py-0.5 text-[10px] uppercase tracking-wider text-onyx/70">
                 {pursuit.rfp.jurisdiction}
               </span>
+              {state.understand.result?.responseProfile && (
+                <>
+                  <span className="text-onyx/30">·</span>
+                  <span
+                    className="rounded-full bg-verdigris/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-aberdeen-blue"
+                    title={state.understand.result.profileRationale}
+                  >
+                    {state.understand.result.responseProfile}
+                  </span>
+                </>
+              )}
             </p>
           </div>
           <div className="flex items-center gap-6">

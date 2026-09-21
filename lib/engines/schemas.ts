@@ -13,7 +13,30 @@ export const evidenceSchema = z.object({
 });
 
 // Engine A — Understand
+export const responseProfileSchema = z.enum([
+  "RFP",
+  "RFI",
+  "RFQ",
+  "Discussion",
+  "Capability",
+  "Questionnaire",
+  "SOW",
+  "Change order",
+]);
+export type ResponseProfile = z.infer<typeof responseProfileSchema>;
+
 export const opportunityBriefSchema = z.object({
+  responseProfile: responseProfileSchema.describe(
+    "Classification of the inbound request. What it asks you to submit beats what it calls itself: " +
+      "approach+qualifications+team+price = RFP; capability with no pricing = RFI; price for a defined scope = RFQ; " +
+      "closed-question workbook = Questionnaire; binding post-win scope = SOW; change to an active SOW = Change order; " +
+      "informal executive conversation = Discussion; who-are-you credentials ask = Capability.",
+  ),
+  profileRationale: z
+    .string()
+    .describe(
+      "One sentence naming the signals that decided the profile classification.",
+    ),
   clientDescriptor: z
     .string()
     .describe(

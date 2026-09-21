@@ -16,11 +16,36 @@ export const METHOD_CORE = `ABERDEEN METHOD (non-negotiable, from the Client Res
 - Use the client's own vocabulary. If they say "footprint reduction," write "footprint reduction," not "rationalization synergies."
 - Voice: plain, confident, concise, outcome-focused, senior-led. No hype, no filler. NEVER use an em dash anywhere in any output - use a hyphen, comma, or full stop. Avoid: "delve", "robust", "seamless", "cutting-edge", "best-in-class", "landscape", "realm", "it's not just X, it's Y", stacked "Furthermore/Moreover/Additionally". Vary sentence length. Specific beats superlative: "reduced prep from 30 hours to 4" beats "dramatically improves efficiency".`;
 
+/**
+ * Per-profile downstream rules (from the skill's response-profiles.md, the
+ * eight canonical profiles). The Understand engine classifies the inbound
+ * request; every later engine receives the matching rule block. Choosing the
+ * wrong response shape is the most expensive mistake available: a 75-page
+ * proposal against a ten-question RFI loses before the content is read.
+ */
+export const PROFILE_RULES: Record<string, string> = {
+  RFP: "Full proposal. Everything the RFP requires, in the client's order: approach, qualifications, named team, references, pricing. Persuasive and descriptive register; states assumptions, scope and pricing without being binding.",
+  RFI: "Capability response - the client is asking what is possible, usually to shape a later RFP. Default exclusions: pricing, detailed staffing, binding commitments, contract terms. These are defaults, not prohibitions: where the RFI explicitly asks for an indicative cost or resource model, answer at estimate grade with assumptions stated and label it indicative. Brevity signals seniority. A point of view on what the client should be asking for is worth more than a capability list.",
+  RFQ: "Quote. The client has defined the scope and wants a price for exactly that. Restated scope, deliverables, price, assumptions and exclusions, terms, timeline. No persuasion essay. Exclusions carry the margin - state what is NOT included as clearly as what is.",
+  Discussion: "Executive pitch following a conversation, not a formal process. Collaborative register, written as if continuing the conversation. Open with what the client said, in their words. A calendar of named working sessions with participants beats a phase bar. A deck is usually the primary artifact.",
+  Capability: "Credentials response - who are you and what have you done. Firm overview, credentials selected by closeness of analog, named team, differentiators, references. Measurable outcomes or nothing: a credential without a number is filler. No approach detail nobody asked for.",
+  Questionnaire: "Closed-question answer sheet. Follow the client's template and question order exactly - never restructure. Answer every row; blank reads as non-compliance. Where the honest answer is weak, give it and name the compensating control. This is the highest fabrication-risk profile: never upgrade an answer beyond the evidence.",
+  SOW: "Binding scope, post-win. Precision over persuasion - every sentence is enforceable. Scope, numbered deliverables with acceptance criteria, timeline, fees, roles, assumptions, change control, off-ramps. NO win themes, NO competitive positioning - persuasion in a binding document is a category error.",
+  "Change order":
+    "In-flight scope change against an active SOW. Factual and unemotional: what changed, impact on scope, schedule and fees, revised deliverables, approval. Everything traceable to the original SOW.",
+};
+
+/** The rule block downstream engines inject once the profile is classified. */
+export function profileRuleBlock(profile?: string): string {
+  if (!profile || !PROFILE_RULES[profile]) return "";
+  return `RESPONSE PROFILE: ${profile}\nShape every output for this profile. ${PROFILE_RULES[profile]}`;
+}
+
 /** Engine A - Understand (from stage 1, intake). */
 export const METHOD_UNDERSTAND = `${METHOD_CORE}
 
 INTAKE DISCIPLINE (stage 1 of the Aberdeen method):
-- Classify the document before anything else: RFP, RFI, RFQ, questionnaire, or informal request. What they ask you to submit is more reliable than what the document calls itself. An RFI wants capability with no pricing; an RFQ wants a price for a defined thing; an RFP wants approach, qualifications, team, and price. State the classification and let it shape everything downstream.
+- Classify the document before anything else into one of the eight response profiles (the responseProfile field): RFP, RFI, RFQ, Discussion, Capability, Questionnaire, SOW, Change order. Signals in order of reliability: (1) what it asks you to submit - approach + qualifications + team + price = RFP; capability with no pricing = RFI; a price for an already-defined scope = RFQ; a workbook of closed questions = Questionnaire; binding post-win scope = SOW; a change to an active SOW = Change order; an informal executive ask following a conversation = Discussion; "who are you and what have you done" = Capability. (2) What the document calls itself - believe it, but verify against signal 1, because clients mislabel. (3) Whether there is a stated evaluation process - weighted criteria and a deadline mean formal. State the deciding signals in profileRationale. Choosing the wrong profile is the most expensive mistake available.
 - The requirements matrix wins or loses the deal. One row per discrete thing the client asked for, in the client's own words and order - never paraphrased into themes. A question the client asks IS a requirement. Format rules (page limits, file types, portals, subject lines) and admin items (certifications, conflict statements, contracting vehicles) are requirements too: they disqualify when missed.
 - Hunt for constraints (pass/fail eligibility gates). The tell is absolute language: "prohibited", "must have", "required", "will not be considered", "only". Mark each one mandatory - a single unmet hard constraint can make an attractive pursuit a no-bid.
 - Hunt for exclusions: content the client said NOT to include ("explicitly out of scope", "not part of this phase"). Proposing excluded work reads as not having read the RFP.

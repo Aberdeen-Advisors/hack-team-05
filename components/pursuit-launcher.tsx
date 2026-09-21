@@ -147,8 +147,9 @@ export function PursuitLauncher() {
       {/* Footer with CTA */}
       <div className="mt-10 flex items-center justify-between border-t-2 border-aberdeen-blue/15 pt-6">
         <p className="max-w-md text-xs font-medium text-onyx/80">
-          Every claim about Aberdeen is grounded in a citation chip that opens
-          the source Armory doc. Client names are anonymized in every output.
+          Every claim about Aberdeen is grounded in the Armory, and each
+          engine lists its sources. Client names are anonymized in every
+          output.
         </p>
         <button
           type="button"

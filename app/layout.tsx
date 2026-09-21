@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Aberdeen Pursuit Copilot",
   description:
-    "RFP-to-pursuit-brief AI copilot for Aberdeen Advisors. Turns a 30–80 page RFP into a pursuit brief, evidence map, and proposal starter.",
+    "Pursuit copilot for Aberdeen Advisors. Turns any inbound client request - RFP, RFI, RFQ, questionnaire, or SOW - into a pursuit brief, evidence map, and profile-shaped response draft.",
   icons: {
     icon: "/brand/aberdeen-mark.svg",
   },
