@@ -103,6 +103,12 @@ export type CachedResults = Partial<{
   /** Per-engine retrieved-source lists (docName/webUrl/docType), keyed by engine name. */
   sources: Record<string, unknown>;
   runDone: boolean;
+  /**
+   * Run lease: epoch-ms until which one server invocation owns orchestration.
+   * A reconnecting client must poll the cache instead of starting a duplicate
+   * run. Stale lease (crashed function) => the next connection takes over.
+   */
+  leaseUntil: number;
 }>;
 
 export async function loadCachedResults(id: string): Promise<CachedResults> {
@@ -141,6 +147,11 @@ export async function saveEngineResult(
 ): Promise<void> {
   const existing = await loadCachedResults(id);
   await writeCachedResults(id, { ...existing, [engine]: result });
+}
+
+export async function saveLease(id: string, leaseUntil: number): Promise<void> {
+  const existing = await loadCachedResults(id);
+  await writeCachedResults(id, { ...existing, leaseUntil });
 }
 
 export async function saveEngineSources(

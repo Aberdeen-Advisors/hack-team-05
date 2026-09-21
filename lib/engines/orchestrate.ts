@@ -55,6 +55,18 @@ export type EngineEvent =
 export async function orchestrate(
   pursuit: PursuitRecord,
   onEvent: (event: EngineEvent) => void | Promise<void>,
+  /**
+   * Already-completed engine results (from the cache). Engines present here
+   * are NOT re-run; their cached values feed the downstream engines. This is
+   * what makes a reconnect resume the run instead of restarting it.
+   */
+  resume: Partial<{
+    understand: OpportunityBrief;
+    strategize: WinStrategy;
+    match: EvidenceMap;
+    design: SolutionBlueprint;
+    create: ProposalDraft;
+  }> = {},
 ) {
   const base = {
     rfp: pursuit.rfp,
@@ -72,6 +84,8 @@ export async function orchestrate(
       sources: EngineSource[];
     }>,
   ): Promise<T> => {
+    const cached = resume[engine];
+    if (cached) return cached as T;
     await onEvent({ type: "engine.start", engine });
     try {
       const { stream, sources } = await launch();
