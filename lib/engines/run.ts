@@ -27,8 +27,10 @@ import {
   type ProposalDraft,
 } from "./schemas";
 
-const ENGINE_MODEL = "anthropic/claude-sonnet-4-6";
-const ORCHESTRATOR_MODEL = "anthropic/claude-opus-4-7";
+// Sonnet 5 is a generation newer AND 33% cheaper than Sonnet 4.6 ($2/$10 vs
+// $3/$15 per MTok); Opus 5 is newer at the same price as Opus 4.7 ($5/$25).
+const ENGINE_MODEL = "anthropic/claude-sonnet-5";
+const ORCHESTRATOR_MODEL = "anthropic/claude-opus-5";
 
 export type EngineName =
   | "understand"
