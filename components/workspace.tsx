@@ -334,12 +334,19 @@ export function Workspace({ pursuit }: { pursuit: PursuitRecord }) {
 function SourcesStrip({ sources }: { sources?: EngineSource[] }) {
   if (!sources || sources.length === 0) return null;
   const linkable = (u: string) => u.startsWith("http");
+  // Real Armory doc names can carry client names. On a public deployment they
+  // must stay hidden (T5's anonymization guarantee); set
+  // NEXT_PUBLIC_SOURCE_NAMES=internal on a tenant/internal deployment to show
+  // them. Links always remain - the target is permission-protected SharePoint.
+  const showNames = process.env.NEXT_PUBLIC_SOURCE_NAMES === "internal";
+  const labelFor = (s: EngineSource, i: number) =>
+    showNames ? s.docName : `Internal source ${i + 1} (${s.docType})`;
   return (
     <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-md border border-border/60 bg-muted/30 px-3 py-2">
       <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-onyx/50">
         Sources
       </span>
-      {sources.map((s) =>
+      {sources.map((s, i) =>
         linkable(s.webUrl) ? (
           <a
             key={s.webUrl || s.docName}
@@ -347,10 +354,10 @@ function SourcesStrip({ sources }: { sources?: EngineSource[] }) {
             target="_blank"
             rel="noreferrer"
             className="inline-flex items-center gap-1 text-xs text-aberdeen-blue underline decoration-verdigris/60 underline-offset-2 hover:decoration-verdigris"
-            title={`${s.docType} — opens in SharePoint`}
+            title={`${s.docType} — opens in SharePoint (permission required)`}
           >
             <FileText className="h-3 w-3" strokeWidth={1.5} />
-            {s.docName}
+            {labelFor(s, i)}
           </a>
         ) : (
           <span
@@ -359,7 +366,7 @@ function SourcesStrip({ sources }: { sources?: EngineSource[] }) {
             title={s.docType}
           >
             <FileText className="h-3 w-3" strokeWidth={1.5} />
-            {s.docName}
+            {labelFor(s, i)}
           </span>
         ),
       )}

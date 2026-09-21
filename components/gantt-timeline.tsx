@@ -38,19 +38,27 @@ export function GanttTimeline({ items }: { items: GanttItem[] }) {
     return ((t - minT) / span) * 100;
   };
 
-  // Merge markers with the same position (rare, but cleaner)
-  const markers = valid.map((r, i) => ({
-    ...r,
-    idx: i,
-    pct: pctFor(r.t as number),
-    stackAbove: i % 2 === 0,
-  }));
+  // Lane assignment with collision avoidance: labels are ~w-40 (about 14% of
+  // a typical bar), so two labels in the same lane need that much separation.
+  // Lanes: 0 = above near, 1 = below near, 2 = above far, 3 = below far.
+  const MIN_GAP = 14;
+  const laneLast = [-Infinity, -Infinity, -Infinity, -Infinity];
+  const markers = valid.map((r, i) => {
+    const pct = pctFor(r.t as number);
+    let lane = laneLast.findIndex((last) => pct - last >= MIN_GAP);
+    if (lane === -1) {
+      lane = laneLast.indexOf(Math.min(...laneLast)); // least-crowded fallback
+    }
+    laneLast[lane] = pct;
+    return { ...r, idx: i, pct, lane };
+  });
+  const usesFarLanes = markers.some((m) => m.lane >= 2);
 
   return (
     <div className="flex flex-col gap-4 rounded-lg border border-border/70 bg-background p-6">
       <div className="flex items-stretch gap-6">
         {/* Main timeline bar */}
-        <div className="relative flex-1 py-10">
+        <div className={usesFarLanes ? "relative flex-1 py-24" : "relative flex-1 py-10"}>
           {/* End caps */}
           <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2">
             <div className="relative h-1 w-full rounded-full bg-gradient-to-r from-verdigris via-aberdeen-blue/70 to-aberdeen-blue">
@@ -70,9 +78,12 @@ export function GanttTimeline({ items }: { items: GanttItem[] }) {
                 {/* Vertical connector line */}
                 <div
                   className={
-                    m.stackAbove
-                      ? "absolute left-1/2 top-1/2 h-8 w-px -translate-x-1/2 -translate-y-full bg-border"
-                      : "absolute left-1/2 top-1/2 h-8 w-px -translate-x-1/2 bg-border"
+                    [
+                      "absolute left-1/2 top-1/2 h-8 w-px -translate-x-1/2 -translate-y-full bg-border",
+                      "absolute left-1/2 top-1/2 h-8 w-px -translate-x-1/2 bg-border",
+                      "absolute left-1/2 top-1/2 h-[4.5rem] w-px -translate-x-1/2 -translate-y-full bg-border",
+                      "absolute left-1/2 top-1/2 h-[4.5rem] w-px -translate-x-1/2 bg-border",
+                    ][m.lane]
                   }
                 />
                 {/* Marker itself */}
@@ -82,12 +93,15 @@ export function GanttTimeline({ items }: { items: GanttItem[] }) {
                   <div className="relative z-10 h-3 w-3 rounded-full border-2 border-verdigris bg-background" />
                 )}
 
-                {/* Label (above or below depending on stackAbove) */}
+                {/* Label position by lane: above/below, near/far */}
                 <div
                   className={
-                    m.stackAbove
-                      ? "absolute bottom-full left-1/2 mb-9 w-40 -translate-x-1/2 text-center"
-                      : "absolute top-full left-1/2 mt-9 w-40 -translate-x-1/2 text-center"
+                    [
+                      "absolute bottom-full left-1/2 mb-9 w-40 -translate-x-1/2 text-center",
+                      "absolute top-full left-1/2 mt-9 w-40 -translate-x-1/2 text-center",
+                      "absolute bottom-full left-1/2 mb-[4.75rem] w-40 -translate-x-1/2 text-center",
+                      "absolute top-full left-1/2 mt-[4.75rem] w-40 -translate-x-1/2 text-center",
+                    ][m.lane]
                   }
                 >
                   <p
@@ -186,8 +200,9 @@ function parseTime(raw: string): number | null {
   const q = s.match(/q(\d)\s*(\d{4})/i);
   if (q) return parseInt(q[2], 10) * 4 + parseInt(q[1], 10);
 
+  // "August 7, 2026" and range forms like "August 7-17, 2026" (first day wins)
   const monthDate = s.match(
-    /(january|february|march|april|may|june|july|august|september|october|november|december)\s+(\d{1,2}),?\s+(\d{4})/i,
+    /(january|february|march|april|may|june|july|august|september|october|november|december)\s+(\d{1,2})(?:\s*[-–]\s*\d{1,2})?,?\s+(\d{4})/i,
   );
   if (monthDate) {
     const t = Date.parse(`${monthDate[1]} ${monthDate[2]}, ${monthDate[3]}`);
@@ -199,8 +214,22 @@ function parseTime(raw: string): number | null {
     if (!Number.isNaN(t)) return t;
   }
 
+  // Year-less dates ("Aug 6", "September 17"): Date.parse defaults the year
+  // to 2001 and silently wrecks the scale. Pin them to the current year.
+  const monthDayNoYear = s.match(
+    /(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\.?\s+(\d{1,2})(?:\s*[-–]\s*\d{1,2})?$/i,
+  );
+  if (monthDayNoYear) {
+    const t = Date.parse(
+      `${monthDayNoYear[1]} ${monthDayNoYear[2]}, ${new Date().getFullYear()}`,
+    );
+    if (!Number.isNaN(t)) return t;
+  }
+
   const t = Date.parse(s);
-  return Number.isNaN(t) ? null : t;
+  if (Number.isNaN(t)) return null;
+  // Reject suspicious default-year parses (V8 puts year-less strings in 2001)
+  return new Date(t).getFullYear() === 2001 ? null : t;
 }
 
 function formatDisplay(raw: string): string {
