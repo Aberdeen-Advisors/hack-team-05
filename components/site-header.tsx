@@ -29,6 +29,12 @@ export function SiteHeader() {
             How it works
           </Link>
           <Link
+            href="/roadmap"
+            className="hover:text-aberdeen-blue transition-colors"
+          >
+            Roadmap
+          </Link>
+          <Link
             href="/"
             className="inline-flex items-center gap-1.5 rounded-full bg-aberdeen-blue px-3.5 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-verdigris"
           >

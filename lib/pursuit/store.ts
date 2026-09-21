@@ -91,6 +91,8 @@ export type CachedResults = Partial<{
   match: unknown;
   design: unknown;
   create: unknown;
+  /** Per-engine retrieved-source lists (docName/webUrl/docType), keyed by engine name. */
+  sources: Record<string, unknown>;
   runDone: boolean;
 }>;
 
@@ -130,6 +132,18 @@ export async function saveEngineResult(
 ): Promise<void> {
   const existing = await loadCachedResults(id);
   await writeCachedResults(id, { ...existing, [engine]: result });
+}
+
+export async function saveEngineSources(
+  id: string,
+  engine: string,
+  sources: unknown,
+): Promise<void> {
+  const existing = await loadCachedResults(id);
+  await writeCachedResults(id, {
+    ...existing,
+    sources: { ...(existing.sources ?? {}), [engine]: sources },
+  });
 }
 
 export async function markRunDone(id: string): Promise<void> {

@@ -3,10 +3,11 @@ import {
   loadPursuit,
   loadCachedResults,
   saveEngineResult,
+  saveEngineSources,
   markRunDone,
 } from "@/lib/pursuit/store";
 import { orchestrate, type EngineEvent } from "@/lib/engines/orchestrate";
-import type { EngineName } from "@/lib/engines/run";
+import type { EngineName, EngineSource } from "@/lib/engines/run";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -62,6 +63,14 @@ export async function GET(
           if (r) {
             send({ type: "engine.start", engine });
             send({ type: "engine.done", engine, result: r });
+            const src = cached.sources?.[engine];
+            if (src) {
+              send({
+                type: "engine.sources",
+                engine,
+                sources: src as EngineSource[],
+              });
+            }
           } else {
             missing.push(engine);
           }
@@ -82,6 +91,13 @@ export async function GET(
                 await saveEngineResult(id, event.engine, event.result);
               } catch (err) {
                 console.error("[stream] cache write failed", err);
+              }
+            }
+            if (event.type === "engine.sources") {
+              try {
+                await saveEngineSources(id, event.engine, event.sources);
+              } catch (err) {
+                console.error("[stream] sources cache write failed", err);
               }
             }
             if (event.type === "run.done") {

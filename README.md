@@ -2,11 +2,11 @@
   <img src="assets/Aberdeen Primary Logo - Blue.svg" alt="Aberdeen Advisors" width="240" />
 </p>
 
-<h1 align="center">Pursuit Concierge</h1>
+<h1 align="center">Pursuit</h1>
 
 <p align="center">
   <strong>The control tower for a single RFP.</strong><br/>
-  <em>The cockpit for the pursuit portfolio.</em>
+  <em>Team 5's experience, running Team 3's method. The combined final-round build.</em>
 </p>
 
 <p align="center">
@@ -43,6 +43,19 @@
 <p align="center">
   <sub><em>Live demo — landing → drop the RFP → workspace fills tab-by-tab → on-brand deliverables. ~20 seconds.</em></sub>
 </p>
+
+---
+
+## The combined build — two heritages, one platform
+
+Two hackathon teams answered the same prompt and independently converged on the same five-stage method. The final-round build merges them:
+
+| From **Team 5 — Pursuit Concierge** | From **Team 3 — Pursuit Accelerator** |
+| --- | --- |
+| The live streaming workspace, five engines, launcher, and one-click on-brand PPTX/DOCX exports | The Aberdeen pursuit **method**: the Client Response & Deliverable Playbook encoded as an editable skill (v0.4.0, in [`method/aberdeen-pursuit/`](method/aberdeen-pursuit/)), distilled into every engine prompt via [`lib/prompts/method.ts`](lib/prompts/method.ts) |
+| Vector retrieval, anonymization, citation enforcement | The **curated pursuit corpus** discipline (point the Armory sync at the curated folder, not a general dump), benchmark scoring against a real submitted Aberdeen response (79–83%, zero fabrications), and `[NEEDS INPUT: what — owner]` flags that route human decisions instead of guessing |
+
+What that changes in practice: requirements come back in the client's own words and order with constraints and format rules captured as mandatory rows; every win theme must pass the *could-a-competitor-write-this* test; credentials rank by closeness of analog and never stretch; deliverables are numbered and traced into the timeline; drafts follow the client's section order with protective how-we-work framing; and each tab now shows **Sources** — the Armory documents the engine actually drew on, linked to the underlying SharePoint file. What's next lives on the in-app [Roadmap](app/roadmap/page.tsx) page.
 
 ---
 
@@ -216,6 +229,8 @@ The concierge's grounding comes from the **Pursuit Armory** — a folder in Aber
 
 An admin syncs the folder once (`npm run armory:sync`); the concierge indexes the content and uses it as grounded context for every engine call. The index refreshes on demand when the Armory changes.
 
+**Point the sync at the curated corpus, not a general document dump.** Team 3's benchmark finding was blunt: the ceiling of every output is the corpus, and a curated folder (playbooks, verified credentials with numbers, services, prior proposals) beats a large unfiltered library on every section score. Set `SHAREPOINT_ARMORY_FOLDER_PATH` to the curated pursuit-corpus folder. For a keyless local demo, `npm run armory:sync -- --from-dir ./sample-armory` indexes the bundled sample corpus (clearly-labelled invented clients and figures, safe for public demos).
+
 ---
 
 ## Guardrails at a glance
@@ -229,14 +244,13 @@ An admin syncs the folder once (`npm run armory:sync`); the concierge indexes th
 
 ---
 
-## The team
+## The teams
 
-Built for the Aberdeen hackathon by **hack-team-05**:
+The combined final-round build stands on both original submissions.
 
-- Carrie Stout (West Coast)
-- Jordan Cook (ET)
-- CJ Johnson
-- Preetish Rath (also a coach)
+**hack-team-05 — Pursuit Concierge** (the experience): Carrie Stout, Jordan Cook, CJ Johnson, Preetish Rath (also a coach).
+
+**hack-team-03 — Pursuit Accelerator** (the method): Kyle Kramer, Harminder Boparai, Jennifer Sexton, Jo-Ellen Hurley.
 
 Organizers / coaches: Liv DeSantis, Kyle Kramer.
 

@@ -6,6 +6,7 @@ import {
   runDesign,
   runCreate,
   type EngineName,
+  type EngineSource,
 } from "./run";
 import type {
   OpportunityBrief,
@@ -26,6 +27,11 @@ export type EngineEvent =
       type: "engine.done";
       engine: EngineName;
       result: unknown;
+    }
+  | {
+      type: "engine.sources";
+      engine: EngineName;
+      sources: EngineSource[];
     }
   | {
       type: "engine.error";
@@ -59,18 +65,22 @@ export async function orchestrate(
   const runOne = async <T>(
     engine: EngineName,
     launch: () => Promise<{
-      partialObjectStream: AsyncIterable<unknown>;
-      object: Promise<unknown>;
+      stream: {
+        partialObjectStream: AsyncIterable<unknown>;
+        object: Promise<unknown>;
+      };
+      sources: EngineSource[];
     }>,
   ): Promise<T> => {
     await onEvent({ type: "engine.start", engine });
     try {
-      const stream = await launch();
+      const { stream, sources } = await launch();
       for await (const partial of stream.partialObjectStream) {
         await onEvent({ type: "engine.delta", engine, partial });
       }
       const result = scrubCitationTokens(await stream.object) as T;
       await onEvent({ type: "engine.done", engine, result });
+      await onEvent({ type: "engine.sources", engine, sources });
       return result;
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);

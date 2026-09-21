@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { CheckCircle2, CircleDashed, Download, Loader2, AlertCircle } from "lucide-react";
+import { CheckCircle2, CircleDashed, Download, Loader2, AlertCircle, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -12,7 +12,7 @@ import { MatchTab } from "@/components/tabs/match-tab";
 import { DesignTab } from "@/components/tabs/design-tab";
 import { CreateTab } from "@/components/tabs/create-tab";
 import type { PursuitRecord } from "@/lib/pursuit/store";
-import type { EngineName } from "@/lib/engines/run";
+import type { EngineName, EngineSource } from "@/lib/engines/run";
 import type {
   OpportunityBrief,
   WinStrategy,
@@ -26,6 +26,7 @@ type EngineState<T> = {
   partial?: Partial<T>;
   result?: T;
   error?: string;
+  sources?: EngineSource[];
 };
 
 type RunState = {
@@ -94,6 +95,11 @@ export function Workspace({ pursuit }: { pursuit: PursuitRecord }) {
               engine: EngineName;
               result: unknown;
             }
+          | {
+              type: "engine.sources";
+              engine: EngineName;
+              sources: EngineSource[];
+            }
           | { type: "engine.error"; engine: EngineName; error: string }
           | { type: "run.done" }
           | { type: "run.error"; error: string };
@@ -116,9 +122,18 @@ export function Workspace({ pursuit }: { pursuit: PursuitRecord }) {
           setState((s) => ({
             ...s,
             [data.engine]: {
+              ...s[data.engine],
               status: "done",
               partial: undefined,
               result: data.result as never,
+            },
+          }));
+        } else if (data.type === "engine.sources") {
+          setState((s) => ({
+            ...s,
+            [data.engine]: {
+              ...s[data.engine],
+              sources: data.sources,
             },
           }));
         } else if (data.type === "engine.error") {
@@ -287,20 +302,67 @@ export function Workspace({ pursuit }: { pursuit: PursuitRecord }) {
         </TabsList>
         <TabsContent value="understand" className="mt-6">
           <UnderstandTab state={state.understand} />
+          <SourcesStrip sources={state.understand.sources} />
         </TabsContent>
         <TabsContent value="strategize" className="mt-6">
           <StrategizeTab state={state.strategize} />
+          <SourcesStrip sources={state.strategize.sources} />
         </TabsContent>
         <TabsContent value="match" className="mt-6">
           <MatchTab state={state.match} />
+          <SourcesStrip sources={state.match.sources} />
         </TabsContent>
         <TabsContent value="design" className="mt-6">
           <DesignTab state={state.design} />
+          <SourcesStrip sources={state.design.sources} />
         </TabsContent>
         <TabsContent value="create" className="mt-6">
           <CreateTab state={state.create} />
+          <SourcesStrip sources={state.create.sources} />
         </TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+/**
+ * The Armory documents this engine actually drew on, linked to the underlying
+ * SharePoint file so a reader can open the deck or proposal and validate the
+ * evidence. Internal-facing: real doc names are fine here (outputs stay
+ * anonymized; sources are citation metadata for the pursuit team).
+ */
+function SourcesStrip({ sources }: { sources?: EngineSource[] }) {
+  if (!sources || sources.length === 0) return null;
+  const linkable = (u: string) => u.startsWith("http");
+  return (
+    <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-md border border-border/60 bg-muted/30 px-3 py-2">
+      <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-onyx/50">
+        Sources
+      </span>
+      {sources.map((s) =>
+        linkable(s.webUrl) ? (
+          <a
+            key={s.webUrl || s.docName}
+            href={s.webUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1 text-xs text-aberdeen-blue underline decoration-verdigris/60 underline-offset-2 hover:decoration-verdigris"
+            title={`${s.docType} — opens in SharePoint`}
+          >
+            <FileText className="h-3 w-3" strokeWidth={1.5} />
+            {s.docName}
+          </a>
+        ) : (
+          <span
+            key={s.webUrl || s.docName}
+            className="inline-flex items-center gap-1 text-xs text-onyx/70"
+            title={s.docType}
+          >
+            <FileText className="h-3 w-3" strokeWidth={1.5} />
+            {s.docName}
+          </span>
+        ),
+      )}
     </div>
   );
 }
