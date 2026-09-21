@@ -12,11 +12,14 @@ import { orchestrate, type EngineEvent } from "@/lib/engines/orchestrate";
 import type { EngineName, EngineSource } from "@/lib/engines/run";
 
 export const runtime = "nodejs";
-export const maxDuration = 800;
+// Hobby-plan cap. A full run may exceed one invocation; that is fine - the
+// lease + resume design lets the reconnecting client take over from the last
+// completed engine instead of restarting. (On Pro, raise toward 800.)
+export const maxDuration = 300;
 export const dynamic = "force-dynamic";
 
 /** How long one invocation owns the run before a reconnect may take over. */
-const LEASE_MS = 810_000;
+const LEASE_MS = 310_000;
 const POLL_INTERVAL_MS = 3_000;
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
