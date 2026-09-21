@@ -33,7 +33,7 @@ export async function POST(req: Request) {
     const rfp = await parseRfp(buffer, file.name);
 
     const record: PursuitRecord = {
-      id: newPursuitId(),
+      id: newPursuitId(opportunityName),
       createdAt: new Date().toISOString(),
       opportunityName,
       clientName,

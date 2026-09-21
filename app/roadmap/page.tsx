@@ -51,11 +51,6 @@ const NEXT: Item[] = [
     answers: "Judge feedback: SharePoint integration, permission and security controls",
   },
   {
-    title: "Golden-pair benchmark on every release",
-    detail:
-      "Re-score each release blind against a real submitted Aberdeen response - the discipline that produced 79-83% section scores with zero fabrications across every benchmark run - so quality is measured, not asserted.",
-  },
-  {
     title: "Shared pursuit workspaces",
     detail:
       "Persistent pursuits with shareable links, an assignable open-items checklist (item, owner, status), and a reviewer handoff state, because a pursuit is a team sport.",
@@ -65,12 +60,6 @@ const NEXT: Item[] = [
     title: "Edit before export",
     detail:
       "Refine sections in the workspace before generating the Word document or deck. Until then, the exported .docx is the editing surface - consultants edit in Word, and every line is read by a human before a client sees it.",
-  },
-  {
-    title: "One platform for the existing assets",
-    detail:
-      "Scout ships as the Ask Aberdeen companion generated with every export; the Client Response Playbook is the engine; the Armory is the evidence layer; Aberdeen Pulse feeds engagement context back in. Consolidation, not duplication.",
-    answers: "Judge feedback: can it integrate with Scout, Pulse, and the Playbook",
   },
   {
     title: "Pursuit KPIs on the dashboard",

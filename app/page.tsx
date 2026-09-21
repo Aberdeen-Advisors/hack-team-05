@@ -377,10 +377,10 @@ export default function Home() {
       <footer className="border-t border-border/60 bg-background">
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-6 py-8 text-xs font-light text-onyx/60">
           <span>
-            Built for the Aberdeen hackathon by hack-team-05 · Carrie · Jordan ·
-            CJ · Preetish
+            Built for the Aberdeen hackathon by hack-team-03 &amp; hack-team-05
+            · the combined final-round build
           </span>
-          <span className="font-mono">v0.3</span>
+          <span className="font-mono">v0.4</span>
         </div>
       </footer>
     </div>

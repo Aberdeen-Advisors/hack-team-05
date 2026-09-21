@@ -77,8 +77,17 @@ export async function loadPursuit(id: string): Promise<PursuitRecord | null> {
   }
 }
 
-export function newPursuitId(): string {
-  return `p_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+export function newPursuitId(opportunityName?: string): string {
+  // Readable, shareable workspace URLs: slug of the opportunity name plus a
+  // short random suffix for uniqueness, e.g. "hanger-ai-readiness-k4qz".
+  const slug = (opportunityName ?? "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 40)
+    .replace(/-+$/g, "");
+  const suffix = Math.random().toString(36).slice(2, 6);
+  return slug ? `${slug}-${suffix}` : `pursuit-${suffix}`;
 }
 
 // ── Cached engine results ──────────────────────────────────────────
