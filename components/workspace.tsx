@@ -1,7 +1,17 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { CheckCircle2, CircleDashed, Download, Loader2, AlertCircle, FileText } from "lucide-react";
+import {
+  CheckCircle2,
+  CircleDashed,
+  Download,
+  Loader2,
+  AlertCircle,
+  FileText,
+  Pencil,
+  Eye,
+  Check,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -11,6 +21,8 @@ import { StrategizeTab } from "@/components/tabs/strategize-tab";
 import { MatchTab } from "@/components/tabs/match-tab";
 import { DesignTab } from "@/components/tabs/design-tab";
 import { CreateTab } from "@/components/tabs/create-tab";
+import { EditingProvider, useEditing } from "@/lib/editing/context";
+import { cn } from "@/lib/utils";
 import type { PursuitRecord } from "@/lib/pursuit/store";
 import type { EngineName, EngineSource } from "@/lib/engines/run";
 import type {
@@ -62,6 +74,12 @@ const VALID_TABS: EngineName[] = [
 ];
 
 export function Workspace({ pursuit }: { pursuit: PursuitRecord }) {
+  return (
+    <WorkspaceInner pursuit={pursuit} />
+  );
+}
+
+function WorkspaceInner({ pursuit }: { pursuit: PursuitRecord }) {
   const [state, setState] = useState<RunState>(INITIAL);
   const [activeTab, setActiveTab] = useState<EngineName>("understand");
   const [runDone, setRunDone] = useState(false);
@@ -162,18 +180,80 @@ export function Workspace({ pursuit }: { pursuit: PursuitRecord }) {
     };
   }, [pursuit.id]);
 
-  const results = useMemo(
+  const streamedResults = useMemo(
     () => ({
-      understand: state.understand.result,
-      strategize: state.strategize.result,
-      match: state.match.result,
-      design: state.design.result,
-      create: state.create.result,
+      understand: state.understand.result as Record<string, unknown> | undefined,
+      strategize: state.strategize.result as Record<string, unknown> | undefined,
+      match: state.match.result as Record<string, unknown> | undefined,
+      design: state.design.result as Record<string, unknown> | undefined,
+      create: state.create.result as Record<string, unknown> | undefined,
     }),
     [state],
   );
 
-  const canExport = runDone && results.understand && results.create;
+  return (
+    <EditingProvider pursuitId={pursuit.id} streamedResults={streamedResults}>
+      <WorkspaceBody
+        pursuit={pursuit}
+        state={state}
+        streamedResults={streamedResults}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        runDone={runDone}
+        runError={runError}
+        exporting={exporting}
+        setExporting={setExporting}
+      />
+    </EditingProvider>
+  );
+}
+
+function WorkspaceBody({
+  pursuit,
+  state,
+  streamedResults,
+  activeTab,
+  setActiveTab,
+  runDone,
+  runError,
+  exporting,
+  setExporting,
+}: {
+  pursuit: PursuitRecord;
+  state: RunState;
+  streamedResults: Record<EngineName, Record<string, unknown> | undefined>;
+  activeTab: EngineName;
+  setActiveTab: (t: EngineName) => void;
+  runDone: boolean;
+  runError: string | null;
+  exporting: null | "pptx" | "docx";
+  setExporting: (v: null | "pptx" | "docx") => void;
+}) {
+  const { editMode, setEditMode, saveState, edits } = useEditing();
+
+  // Merge streamed engine state with any user edits — edits win for engines
+  // the user has touched; unedited engines pass through streamed data.
+  const effectiveResults = useMemo(
+    () => ({
+      understand: (edits.understand ?? streamedResults.understand) as
+        | OpportunityBrief
+        | undefined,
+      strategize: (edits.strategize ?? streamedResults.strategize) as
+        | WinStrategy
+        | undefined,
+      match: (edits.match ?? streamedResults.match) as EvidenceMap | undefined,
+      design: (edits.design ?? streamedResults.design) as
+        | SolutionBlueprint
+        | undefined,
+      create: (edits.create ?? streamedResults.create) as
+        | ProposalDraft
+        | undefined,
+    }),
+    [edits, streamedResults],
+  );
+
+  const canExport =
+    runDone && effectiveResults.understand && effectiveResults.create;
 
   async function exportFile(kind: "pptx" | "docx") {
     if (!canExport) return;
@@ -185,7 +265,7 @@ export function Workspace({ pursuit }: { pursuit: PursuitRecord }) {
         body: JSON.stringify({
           pursuitId: pursuit.id,
           opportunityName: pursuit.opportunityName,
-          results,
+          results: effectiveResults,
         }),
       });
       if (!res.ok) throw new Error(await res.text());
@@ -229,20 +309,50 @@ export function Workspace({ pursuit }: { pursuit: PursuitRecord }) {
               <span className="rounded-full border border-border/70 px-2 py-0.5 text-[10px] uppercase tracking-wider text-onyx/70">
                 {pursuit.rfp.jurisdiction}
               </span>
-              {state.understand.result?.responseProfile && (
+              {effectiveResults.understand?.responseProfile && (
                 <>
                   <span className="text-onyx/30">·</span>
                   <span
                     className="rounded-full bg-verdigris/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-aberdeen-blue"
-                    title={state.understand.result.profileRationale}
+                    title={effectiveResults.understand.profileRationale}
                   >
-                    {state.understand.result.responseProfile}
+                    {effectiveResults.understand.responseProfile}
                   </span>
                 </>
               )}
             </p>
           </div>
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-5">
+            {/* Edit / read toggle */}
+            <button
+              type="button"
+              onClick={() => setEditMode(!editMode)}
+              className={cn(
+                "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors",
+                editMode
+                  ? "border-aberdeen-blue bg-aberdeen-blue text-white hover:bg-aberdeen-blue/90"
+                  : "border-border/70 text-onyx/80 hover:border-aberdeen-blue hover:text-aberdeen-blue",
+              )}
+              title={
+                editMode
+                  ? "Exit edit mode — changes auto-save on blur"
+                  : "Edit any text in the workspace"
+              }
+            >
+              {editMode ? (
+                <>
+                  <Eye className="h-3.5 w-3.5" strokeWidth={2} />
+                  Done editing
+                </>
+              ) : (
+                <>
+                  <Pencil className="h-3.5 w-3.5" strokeWidth={2} />
+                  Edit
+                </>
+              )}
+            </button>
+            {/* Save state indicator */}
+            {editMode && <SaveIndicator saveState={saveState} />}
             <button
               type="button"
               onClick={() => exportFile("docx")}
@@ -312,23 +422,38 @@ export function Workspace({ pursuit }: { pursuit: PursuitRecord }) {
           ))}
         </TabsList>
         <TabsContent value="understand" className="mt-6">
-          <UnderstandTab state={state.understand} />
+          <UnderstandTab
+            state={state.understand}
+            effectiveResult={effectiveResults.understand}
+          />
           <SourcesStrip sources={state.understand.sources} />
         </TabsContent>
         <TabsContent value="strategize" className="mt-6">
-          <StrategizeTab state={state.strategize} />
+          <StrategizeTab
+            state={state.strategize}
+            effectiveResult={effectiveResults.strategize}
+          />
           <SourcesStrip sources={state.strategize.sources} />
         </TabsContent>
         <TabsContent value="match" className="mt-6">
-          <MatchTab state={state.match} />
+          <MatchTab
+            state={state.match}
+            effectiveResult={effectiveResults.match}
+          />
           <SourcesStrip sources={state.match.sources} />
         </TabsContent>
         <TabsContent value="design" className="mt-6">
-          <DesignTab state={state.design} />
+          <DesignTab
+            state={state.design}
+            effectiveResult={effectiveResults.design}
+          />
           <SourcesStrip sources={state.design.sources} />
         </TabsContent>
         <TabsContent value="create" className="mt-6">
-          <CreateTab state={state.create} />
+          <CreateTab
+            state={state.create}
+            effectiveResult={effectiveResults.create}
+          />
           <SourcesStrip sources={state.create.sources} />
         </TabsContent>
       </Tabs>
@@ -393,6 +518,42 @@ function StatusDot({ status }: { status: EngineState<unknown>["status"] }) {
   if (status === "error")
     return <AlertCircle className="h-3.5 w-3.5 text-jasper" strokeWidth={1.75} />;
   return <CircleDashed className="h-3.5 w-3.5 text-onyx/30" strokeWidth={1.5} />;
+}
+
+function SaveIndicator({
+  saveState,
+}: {
+  saveState: "idle" | "saving" | "saved" | "error";
+}) {
+  if (saveState === "idle") {
+    return (
+      <span className="text-[11px] font-medium text-onyx/50">
+        Auto-saves on blur
+      </span>
+    );
+  }
+  if (saveState === "saving") {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-gold">
+        <Loader2 className="h-3 w-3 animate-spin" strokeWidth={2} />
+        Saving…
+      </span>
+    );
+  }
+  if (saveState === "saved") {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-jade">
+        <Check className="h-3 w-3" strokeWidth={2.5} />
+        Saved
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-jasper">
+      <AlertCircle className="h-3 w-3" strokeWidth={2} />
+      Save failed
+    </span>
+  );
 }
 
 // Re-exported for tab components.

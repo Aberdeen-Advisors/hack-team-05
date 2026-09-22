@@ -27,13 +27,22 @@ export function ErrorCard({ error }: { error: string }) {
   );
 }
 
-/** Common gating that every tab needs before rendering its result. */
-export function tabView<T>(state: EngineState<T>) {
+/**
+ * Common gating that every tab needs before rendering its result.
+ * Prefers `effectiveResult` (streamed value merged with any user edits) when
+ * available, then falls back to partial stream data during a live run.
+ */
+export function tabView<T>(
+  state: EngineState<T>,
+  effectiveResult?: T | undefined,
+) {
   if (state.status === "pending")
     return { kind: "pending" as const };
   if (state.status === "error")
     return { kind: "error" as const, error: state.error ?? "unknown error" };
-  const data = (state.result ?? state.partial) as Partial<T> | undefined;
+  const data = (effectiveResult ?? state.result ?? state.partial) as
+    | Partial<T>
+    | undefined;
   const isStreaming = state.status === "running";
   return { kind: "ok" as const, data, isStreaming };
 }

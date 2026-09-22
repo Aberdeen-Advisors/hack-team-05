@@ -1,5 +1,9 @@
+"use client";
+
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Editable, EditableList, EditableParagraph } from "@/components/editable";
+import { useEditing } from "@/lib/editing/context";
 import type { EngineState } from "@/components/workspace";
 import type { EvidenceMap } from "@/lib/engines/schemas";
 import {
@@ -10,12 +14,40 @@ import {
   tabView,
 } from "./shared";
 
-export function MatchTab({ state }: { state: EngineState<EvidenceMap> }) {
-  const view = tabView(state);
+type Match = NonNullable<EvidenceMap["matches"]>[number];
+
+export function MatchTab({
+  state,
+  effectiveResult,
+}: {
+  state: EngineState<EvidenceMap>;
+  effectiveResult?: EvidenceMap;
+}) {
+  const view = tabView(state, effectiveResult);
+  const { updateEngine } = useEditing();
+
   if (view.kind === "pending") return <PendingCard label="Evidence Map" />;
   if (view.kind === "error") return <ErrorCard error={view.error} />;
   const { data, isStreaming } = view;
   if (!data) return <StreamingHint label="evidence map" />;
+
+  const update = <K extends keyof EvidenceMap>(
+    key: K,
+    value: EvidenceMap[K],
+  ) => {
+    updateEngine<EvidenceMap & Record<string, unknown>>("match", (prev) => ({
+      ...((prev ?? data) as EvidenceMap),
+      [key]: value,
+    }));
+  };
+
+  const updateMatch = (i: number, patch: Partial<Match>) => {
+    const matches = [...(data.matches ?? [])];
+    if (matches[i]) {
+      matches[i] = { ...matches[i], ...patch } as Match;
+      update("matches", matches);
+    }
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -26,25 +58,43 @@ export function MatchTab({ state }: { state: EngineState<EvidenceMap> }) {
           {(data.matches ?? []).map((m, i) => (
             <Card key={i} className="p-6">
               <div className="flex items-start justify-between gap-3">
-                <div>
+                <div className="flex-1">
                   <p className="text-xs font-semibold uppercase tracking-wider text-verdigris">
                     Match #{m?.rank ?? i + 1}
                     {m?.docTag ? ` · ${m.docTag}` : ""}
                   </p>
-                  <h3 className="mt-1 text-lg font-medium text-aberdeen-blue">
-                    {m?.clientDescriptor ?? "Prior Aberdeen engagement"}
-                  </h3>
+                  <div className="mt-1 text-lg font-medium text-aberdeen-blue">
+                    <Editable
+                      value={m?.clientDescriptor}
+                      onChange={(v) => updateMatch(i, { clientDescriptor: v })}
+                      emptyLabel="Prior Aberdeen engagement"
+                      placeholder="Anonymized descriptor"
+                    />
+                  </div>
                 </div>
               </div>
-              <p className="mt-3 text-sm text-onyx">{m?.whyRelevant}</p>
-              {m?.outcome && (
-                <p className="mt-2 rounded-md bg-jade/10 p-2 text-sm text-jade">
-                  Outcome: {m.outcome}
-                </p>
+              <div className="mt-3 text-sm text-onyx">
+                <EditableParagraph
+                  value={m?.whyRelevant}
+                  onChange={(v) => updateMatch(i, { whyRelevant: v })}
+                  placeholder="Why this evidence is relevant"
+                  minRows={2}
+                />
+              </div>
+              {(m?.outcome !== undefined || m?.outcome === "") && (
+                <div className="mt-2 rounded-md bg-jade/10 p-2 text-sm text-jade">
+                  <span className="font-semibold">Outcome:</span>{" "}
+                  <Editable
+                    value={m?.outcome}
+                    onChange={(v) => updateMatch(i, { outcome: v })}
+                    placeholder="Measurable outcome"
+                    className="text-jade"
+                  />
+                </div>
               )}
               {(() => {
                 const reqs = (m?.rfpRequirementsAddressed ?? []).filter(
-                  (r) => !!r && !/^\s*R\d+\s*$/i.test(r), // hide bare IDs like "R5"
+                  (r) => !!r && !/^\s*R\d+\s*$/i.test(r),
                 );
                 return reqs.length > 0 ? (
                   <div className="mt-3 flex flex-wrap gap-1.5">
@@ -67,11 +117,13 @@ export function MatchTab({ state }: { state: EngineState<EvidenceMap> }) {
       {(data.gaps?.length ?? 0) > 0 && (
         <Card className="border-jasper/40 bg-jasper/5 p-6">
           <SectionHeading>Evidence gaps</SectionHeading>
-          <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-onyx">
-            {(data.gaps ?? []).map((g, i) => (
-              <li key={i}>{g}</li>
-            ))}
-          </ul>
+          <div className="mt-2 pl-5 text-sm text-onyx">
+            <EditableList
+              items={data.gaps}
+              onChange={(v) => update("gaps", v)}
+              itemPlaceholder="Add a gap"
+            />
+          </div>
         </Card>
       )}
     </div>

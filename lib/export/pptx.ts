@@ -75,42 +75,66 @@ export async function buildDeck(args: {
     run();
   };
 
-  // ── Our Understanding ─────────────────────────────────────────────
+  // Deck order follows the spine's "deck variant" from
+  // method/aberdeen-pursuit/references/proposal-spine.md:
+  //   client's problem → what we heard → approach → team →
+  //   proof → timeline → commercials → what happens next.
+
+  // ── 1. Our Understanding (their problem, in their words) ─────────
   if (results.understand) {
     withSection("Our Understanding", () => {
       understandingSlide(pptx, results.understand!);
     });
   }
 
-  // ── Win Themes ────────────────────────────────────────────────────
+  // ── 2. What we heard (win themes shaped to the client's problem) ─
   if (results.strategize?.winThemes?.length) {
-    withSection("Win Themes", () => {
+    withSection("What We Heard", () => {
       results.strategize!.winThemes!.forEach((t, i) => winThemeSlide(pptx, t, i));
     });
   }
 
-  // ── Relevant Experience ───────────────────────────────────────────
+  // ── 3. Approach ──────────────────────────────────────────────────
+  if (results.design?.workstreams?.length) {
+    withSection("Our Approach", () => {
+      approachSlide(pptx, results.design!);
+    });
+  }
+
+  // ── 4. Team ──────────────────────────────────────────────────────
+  if (results.design?.staffingModel?.length) {
+    withSection("The Team", () => {
+      teamSlide(pptx, results.design!);
+    });
+  }
+
+  // ── 5. Proof (relevant experience) ───────────────────────────────
   if (results.match?.matches?.length) {
-    withSection("Relevant Experience", () => {
+    withSection("Proof", () => {
       results.match!.matches!.slice(0, 3).forEach((m, i) =>
         matchSlide(pptx, m, i),
       );
     });
   }
 
-  // ── Proposed Approach ─────────────────────────────────────────────
-  if (results.design?.workstreams?.length) {
-    withSection("Proposed Approach", () => {
-      approachSlide(pptx, results.design!);
+  // ── 6. Timeline (post-award delivery) ────────────────────────────
+  if (results.design?.deliveryTimeline?.length) {
+    withSection("Timeline", () => {
+      timelineSlide(pptx, results.design!);
     });
   }
 
-  // ── The Human Element ─────────────────────────────────────────────
-  withSection("The Human Element", () => {
+  // ── 7. Commercials placeholder ───────────────────────────────────
+  withSection("Commercials", () => {
+    commercialsSlide(pptx);
+  });
+
+  // ── 8. Why Aberdeen / human element ──────────────────────────────
+  withSection("Why Aberdeen", () => {
     humanElementSlide(pptx, results.create?.whyAberdeen);
   });
 
-  // ── Closer ────────────────────────────────────────────────────────
+  // ── Closer — What happens next ───────────────────────────────────
   closer(pptx);
 
   return (await pptx.write({ outputType: "nodebuffer" })) as Buffer;
@@ -654,6 +678,172 @@ function approachSlide(pptx: PptxGenJS, d: SolutionBlueprint) {
   bottomBanner(
     s,
     "Multidisciplinary pods · Referral-based workforce · Delivery, not just direction.",
+  );
+}
+
+/**
+ * Team slide — named senior roles, responsibilities, and allocation.
+ * Per the spine: "Named senior people, roles, and time commitment."
+ */
+function teamSlide(pptx: PptxGenJS, d: SolutionBlueprint) {
+  const s = pptx.addSlide({ masterName: "ABERDEEN" });
+  contentTitle(
+    s,
+    "Team",
+    "Who Aberdeen brings",
+    "Senior-led. Named in the full proposal. Allocation sized to the engagement.",
+  );
+
+  const staffing = (d.staffingModel ?? []).slice(0, 8);
+  const rows = staffing.map((p) => [
+    { text: p.role, options: { bold: true, color: BLUE } },
+    { text: p.responsibility, options: { color: ONYX } },
+    { text: `${p.allocationPct}%`, options: { color: TEAL, bold: true } },
+  ]);
+
+  s.addTable(
+    [
+      [
+        { text: "Role", options: { bold: true, color: WHITE, fill: { color: BLUE } } },
+        { text: "Responsibility", options: { bold: true, color: WHITE, fill: { color: BLUE } } },
+        { text: "Allocation", options: { bold: true, color: WHITE, fill: { color: BLUE } } },
+      ],
+      ...rows,
+    ],
+    {
+      x: 0.6,
+      y: 2.5,
+      w: 12.1,
+      fontFace: FONT,
+      fontSize: 12,
+      color: ONYX,
+      border: { pt: 1, color: "E2E8F0" },
+      colW: [3, 7.5, 1.6],
+    },
+  );
+
+  bottomBanner(
+    s,
+    "Real names, real bios, real credentials — confirmed against roster availability in the full proposal.",
+  );
+}
+
+/**
+ * Post-award delivery timeline — Week N milestones on a chevron rail.
+ * Per the spine: "Phased, gate-based, aligned to their start date."
+ */
+function timelineSlide(pptx: PptxGenJS, d: SolutionBlueprint) {
+  const s = pptx.addSlide({ masterName: "ABERDEEN" });
+  contentTitle(s, "Timeline", "Delivery milestones after award");
+
+  const items = (d.deliveryTimeline ?? []).slice(0, 8);
+  if (items.length === 0) return;
+
+  const y0 = 2.6;
+  const rowH = 0.55;
+  items.forEach((m, i) => {
+    const y = y0 + i * rowH;
+    // Week pill
+    s.addShape("roundRect", {
+      x: 0.6,
+      y,
+      w: 1.4,
+      h: 0.4,
+      fill: { color: TEAL, transparency: 80 },
+      line: { color: TEAL, width: 0.75 },
+      rectRadius: 0.05,
+    });
+    s.addText(m.weekOffset, {
+      x: 0.6,
+      y,
+      w: 1.4,
+      h: 0.4,
+      fontFace: FONT,
+      fontSize: 11,
+      color: TEAL,
+      bold: true,
+      align: "center",
+      valign: "middle",
+    });
+    // Milestone label
+    s.addText(m.milestone, {
+      x: 2.15,
+      y,
+      w: 10.5,
+      h: 0.4,
+      fontFace: FONT,
+      fontSize: 12,
+      color: ONYX,
+      valign: "middle",
+    });
+  });
+
+  bottomBanner(
+    s,
+    "Week-by-week grid, not a phase diagram. Sized to the client's stated engagement length.",
+  );
+}
+
+/**
+ * Commercials placeholder — explicit [NEEDS INPUT] rather than made-up numbers.
+ * Per the spine: pricing must come from the corpus or be [NEEDS INPUT].
+ */
+function commercialsSlide(pptx: PptxGenJS) {
+  const s = pptx.addSlide({ masterName: "ABERDEEN" });
+  contentTitle(
+    s,
+    "Commercials",
+    "Transparent, by deliverable",
+    "Aberdeen will not commit to a price without evidenced rates and an agreed scope.",
+  );
+
+  // NEEDS INPUT callout box
+  s.addShape("roundRect", {
+    x: 0.6,
+    y: 2.8,
+    w: 12.1,
+    h: 2.5,
+    fill: { color: "FEF3C7" },
+    line: { color: "F59E0B", width: 1 },
+    rectRadius: 0.1,
+  });
+  s.addText("[NEEDS INPUT]", {
+    x: 0.9,
+    y: 3.0,
+    w: 6,
+    h: 0.5,
+    fontFace: FONT,
+    fontSize: 14,
+    bold: true,
+    color: "92400E",
+  });
+  s.addText(
+    "Cost proposal by deliverable — fixed-fee or T&M, pulled from the rate card, or a range with the caveats spelled out.",
+    {
+      x: 0.9,
+      y: 3.55,
+      w: 11.5,
+      h: 1.0,
+      fontFace: FONT,
+      fontSize: 13,
+      color: ONYX,
+      valign: "top",
+    },
+  );
+  s.addText("Resolves with: commercial lead", {
+    x: 0.9,
+    y: 4.7,
+    w: 11.5,
+    h: 0.4,
+    fontFace: FONT,
+    fontSize: 11,
+    color: BLUE,
+    italic: true,
+  });
+
+  bottomBanner(
+    s,
+    "Benefits numbers require an agreed baseline before commitment — called out in assumptions.",
   );
 }
 

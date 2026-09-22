@@ -1,6 +1,10 @@
+"use client";
+
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { GanttTimeline } from "@/components/gantt-timeline";
+import { Editable, EditableList, EditableParagraph } from "@/components/editable";
+import { useEditing } from "@/lib/editing/context";
 import type { EngineState } from "@/components/workspace";
 import type { OpportunityBrief } from "@/lib/engines/schemas";
 import {
@@ -54,48 +58,78 @@ const ACTION_COLORS: Record<ResponseAction, string> = {
 
 export function UnderstandTab({
   state,
+  effectiveResult,
 }: {
   state: EngineState<OpportunityBrief>;
+  effectiveResult?: OpportunityBrief;
 }) {
-  const view = tabView(state);
+  const view = tabView(state, effectiveResult);
+  const { updateEngine } = useEditing();
+
   if (view.kind === "pending") return <PendingCard label="Opportunity Brief" />;
   if (view.kind === "error") return <ErrorCard error={view.error} />;
   const { data, isStreaming } = view;
   if (!data) return <StreamingHint label="opportunity brief" />;
+
+  // Helper to update a top-level field on the OpportunityBrief.
+  const update = <K extends keyof OpportunityBrief>(
+    key: K,
+    value: OpportunityBrief[K],
+  ) => {
+    updateEngine<OpportunityBrief & Record<string, unknown>>(
+      "understand",
+      (prev) => ({ ...((prev ?? data) as OpportunityBrief), [key]: value }),
+    );
+  };
 
   return (
     <div className="flex flex-col gap-6">
       {isStreaming && <StreamingHint label="opportunity brief" />}
       <Card className="p-6">
         <SectionHeading>Client</SectionHeading>
-        <p className="mt-2 text-lg font-medium text-aberdeen-blue">
-          {data.clientDescriptor ?? "…"}
-        </p>
+        <div className="mt-2 text-lg font-medium text-aberdeen-blue">
+          <Editable
+            value={data.clientDescriptor}
+            onChange={(v) => update("clientDescriptor", v)}
+            emptyLabel="…"
+            placeholder="Anonymized client descriptor"
+          />
+        </div>
         <div className="mt-4 grid gap-6 md:grid-cols-2">
           <div>
             <SectionHeading>Objectives</SectionHeading>
-            <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-onyx">
-              {(data.objectives ?? []).map((o, i) => (
-                <li key={i}>{o}</li>
-              ))}
-            </ul>
+            <div className="mt-2 pl-5 text-sm text-onyx">
+              <EditableList
+                items={data.objectives}
+                onChange={(v) => update("objectives", v)}
+                itemPlaceholder="Add an objective"
+              />
+            </div>
           </div>
           <div>
             <SectionHeading>Pain points</SectionHeading>
-            <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-onyx">
-              {(data.painPoints ?? []).map((p, i) => (
-                <li key={i}>{p}</li>
-              ))}
-            </ul>
+            <div className="mt-2 pl-5 text-sm text-onyx">
+              <EditableList
+                items={data.painPoints}
+                onChange={(v) => update("painPoints", v)}
+                itemPlaceholder="Add a pain point"
+              />
+            </div>
           </div>
         </div>
       </Card>
 
       <Card className="p-6">
         <SectionHeading>Scope</SectionHeading>
-        <p className="mt-2 text-sm leading-relaxed text-onyx">
-          {data.scope ?? "…"}
-        </p>
+        <div className="mt-2 text-sm leading-relaxed text-onyx">
+          <EditableParagraph
+            value={data.scope}
+            onChange={(v) => update("scope", v)}
+            emptyLabel="…"
+            placeholder="Scope of services"
+            minRows={3}
+          />
+        </div>
       </Card>
 
       <Card className="p-6">
@@ -122,10 +156,25 @@ export function UnderstandTab({
                 const cls = action
                   ? ACTION_COLORS[action]
                   : "border-border/60 text-onyx/60";
+                const updateRequirement = (
+                  field: "requirement",
+                  value: string,
+                ) => {
+                  const next = [...(data.requirements ?? [])];
+                  if (next[i]) {
+                    next[i] = { ...next[i], [field]: value };
+                    update("requirements", next);
+                  }
+                };
                 return (
                   <tr key={i} className="border-t border-border">
                     <td className="p-2 font-mono text-xs">{r?.id}</td>
-                    <td className="p-2 text-onyx">{r?.requirement}</td>
+                    <td className="p-2 text-onyx">
+                      <Editable
+                        value={r?.requirement}
+                        onChange={(v) => updateRequirement("requirement", v)}
+                      />
+                    </td>
                     <td className="p-2">
                       <Badge variant="outline" className="text-xs">
                         {r?.category}
@@ -179,15 +228,24 @@ export function UnderstandTab({
       <div className="grid gap-6 md:grid-cols-2">
         <Card className="p-6">
           <SectionHeading>Evaluation criteria</SectionHeading>
-          <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-onyx">
-            {(data.evaluationCriteria ?? []).map((c, i) => (
-              <li key={i}>{c}</li>
-            ))}
-          </ul>
+          <div className="mt-2 pl-5 text-sm text-onyx">
+            <EditableList
+              items={data.evaluationCriteria}
+              onChange={(v) => update("evaluationCriteria", v)}
+              itemPlaceholder="Add a criterion"
+            />
+          </div>
         </Card>
         <Card className="p-6">
           <SectionHeading>Compliance notes</SectionHeading>
-          <p className="mt-2 text-sm text-onyx">{data.complianceNotes}</p>
+          <div className="mt-2 text-sm text-onyx">
+            <EditableParagraph
+              value={data.complianceNotes}
+              onChange={(v) => update("complianceNotes", v)}
+              placeholder="Formatting, submission portal, page limits…"
+              minRows={3}
+            />
+          </div>
         </Card>
       </div>
 
@@ -209,19 +267,24 @@ export function UnderstandTab({
       <div className="grid gap-6 md:grid-cols-2">
         <Card className="p-6">
           <SectionHeading>Risks & constraints</SectionHeading>
-          <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-onyx">
-            {(data.risksAndConstraints ?? []).map((r, i) => (
-              <li key={i}>{r}</li>
-            ))}
-          </ul>
+          <div className="mt-2 pl-5 text-sm text-onyx">
+            <EditableList
+              items={data.risksAndConstraints}
+              onChange={(v) => update("risksAndConstraints", v)}
+              itemPlaceholder="Add a risk"
+            />
+          </div>
         </Card>
         <Card className="p-6">
           <SectionHeading>Questions to send back</SectionHeading>
-          <ul className="mt-2 list-decimal space-y-1 pl-5 text-sm text-onyx">
-            {(data.stakeholderQuestions ?? []).map((q, i) => (
-              <li key={i}>{q}</li>
-            ))}
-          </ul>
+          <div className="mt-2 pl-5 text-sm text-onyx">
+            <EditableList
+              items={data.stakeholderQuestions}
+              onChange={(v) => update("stakeholderQuestions", v)}
+              itemPlaceholder="Add a question"
+              wrapper="ol"
+            />
+          </div>
         </Card>
       </div>
     </div>
