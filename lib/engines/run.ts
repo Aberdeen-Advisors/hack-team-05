@@ -506,7 +506,7 @@ export async function runCreate(
     "",
     armoryBlock(contextText),
     "",
-    "TASK: Produce the ProposalDraft, applying the DRAFTING DISCIPLINE and the RESPONSE PROFILE rules above. The profile decides the shape: a proposal for an RFP, a capability response for an RFI, a quote for an RFQ, a factual register for a SOW or Change order - never a 75-page proposal shape against a ten-question RFI. Write an outline that follows the CLIENT'S required sections in the CLIENT'S order (fold Aberdeen's structure into theirs), first-draft prose for Executive Summary / Our Understanding / Proposed Approach, a 'Why Aberdeen' passage that includes a short evaluation-criteria crosswalk where the RFP states weighted criteria, and a 6-10 slide executive deck spec. The Executive Summary opens with 'Our understanding is that...' and leads with the human element. Weave protective framing (assumptions, out-of-scope, change control, acceptance) into the approach as how-we-work language. Match the client's brand voice - playful brand, witty summary; federal / state, formal throughout.",
+    "TASK: Produce the ProposalDraft — first-draft prose for the three draftSections (Executive Summary, Our Understanding, Proposed Approach) and a Why Aberdeen passage. Apply the DRAFTING DISCIPLINE and the RESPONSE PROFILE rules above. The profile decides the shape: a proposal for an RFP, a capability response for an RFI, a quote for an RFQ, a factual register for a SOW or Change order — never a 75-page proposal shape against a ten-question RFI. Executive Summary opens with 'Our understanding is that...' and leads with the human element. Weave protective framing (assumptions, out-of-scope, change control, acceptance) into the approach as how-we-work language. Match the client's brand voice — playful brand, witty summary; federal / state, formal throughout. The exports assemble the full proposal spine and slide deck from all engines' results; you do not need to enumerate the outline or the slides yourself.",
   ].join("\n");
 
   return {
@@ -515,9 +515,9 @@ export async function runCreate(
       system: ABERDEEN_SYSTEM_PROMPT,
       cachedPrefix: rfpBlock(ctx.rfp, ctx.opportunityName, ctx.clientName),
       prompt,
-      // proposalOutline + 3 long draft sections + whyAberdeen + 6-10 deck
-      // slides is the largest single output in the pipeline; give it room.
-      maxOutputTokens: 16000,
+      // 3 short draft sections + whyAberdeen fits comfortably in the default
+      // 16k cap; earlier this needed to be 16k explicitly for outline + deck
+      // fields that are no longer produced.
     }),
     sources: sourcesFromHits(hits),
   };

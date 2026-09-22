@@ -259,18 +259,16 @@ export const solutionBlueprintSchema = z.object({
 export type SolutionBlueprint = z.infer<typeof solutionBlueprintSchema>;
 
 // Engine E — Create
+//
+// Scope note: earlier iterations of this engine also produced a full
+// proposalOutline and a deckSpec. The DOCX export now walks the spine from
+// method/aberdeen-pursuit/references/proposal-spine.md and the PPT builds
+// slides directly from the other engines' results, so both those fields were
+// unused end-to-end but were forcing Create to generate 60-100% more output
+// tokens — pushing the full pipeline past Vercel Hobby's 300s function cap.
+// Kept optional so a pursuit that was cached with those fields still renders
+// them in the Create tab; new runs skip them.
 export const proposalDraftSchema = z.object({
-  proposalOutline: z
-    .array(
-      z.object({
-        section: z.string(),
-        purpose: z.string(),
-        keyPoints: z.array(z.string()),
-      }),
-    )
-    .describe(
-      "Full proposal outline: Executive Summary, Our Understanding, Proposed Approach, Relevant Experience, Team, Timeline, Why Aberdeen.",
-    ),
   draftSections: z.object({
     executiveSummary: z.string().describe("~250 words. Lead with human element."),
     ourUnderstanding: z
@@ -286,20 +284,25 @@ export const proposalDraftSchema = z.object({
       "~200 words distilling the differentiators + culture into a single 'Why Aberdeen' passage. " +
         "Do NOT include [C#] citation tags inline — write clean prose without any bracketed reference tokens.",
     ),
+  // Optional legacy fields — not required from new runs.
+  proposalOutline: z
+    .array(
+      z.object({
+        section: z.string(),
+        purpose: z.string(),
+        keyPoints: z.array(z.string()),
+      }),
+    )
+    .optional(),
   deckSpec: z
     .array(
       z.object({
         slideTitle: z.string(),
         bullets: z.array(z.string()),
         speakerNotes: z.string(),
-        layout: z
-          .enum(["title", "content", "twoColumn", "quote", "closer"])
-          .describe("Layout hint for the pptx exporter."),
+        layout: z.enum(["title", "content", "twoColumn", "quote", "closer"]),
       }),
     )
-    .min(1)
-    .describe(
-      "Executive deck (aim for 6-10 slides): Title, Understanding, Win Themes, Approach, Human Element, Why Aberdeen, Closing.",
-    ),
+    .optional(),
 });
 export type ProposalDraft = z.infer<typeof proposalDraftSchema>;

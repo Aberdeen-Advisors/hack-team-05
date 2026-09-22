@@ -19,7 +19,11 @@ export const maxDuration = 300;
 export const dynamic = "force-dynamic";
 
 /** How long one invocation owns the run before a reconnect may take over. */
-const LEASE_MS = 310_000;
+// 290s: sized to fit inside Vercel Hobby's 300s function cap so the lease
+// expires when (or slightly before) the invocation is killed. A larger value
+// leaves the lease "active" on Upstash after the function dies, blocking the
+// next reconnect from resuming work.
+const LEASE_MS = 290_000;
 const POLL_INTERVAL_MS = 3_000;
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
