@@ -71,6 +71,14 @@ function runEngine<T>(args: {
   /** Engine-specific remainder - method, priors, Armory context, task. */
   prompt: string;
   model?: string;
+  /**
+   * Output-token cap. Anthropic defaults to 4096, which is enough for the
+   * Understand / Strategize / Match / Design schemas but truncates the Create
+   * engine mid-JSON (proposal outline + three draft sections + why-Aberdeen +
+   * 6-10 deck slides can easily run 6-8k output tokens). Bumping to 16k covers
+   * the worst case without materially changing latency or spend.
+   */
+  maxOutputTokens?: number;
 }) {
   return streamObject({
     model: gateway.languageModel(args.model ?? ENGINE_MODEL),
@@ -92,6 +100,7 @@ function runEngine<T>(args: {
       },
     ],
     temperature: 0.4,
+    maxOutputTokens: args.maxOutputTokens ?? 8000,
   });
 }
 
@@ -381,6 +390,9 @@ export async function runCreate(
       cachedPrefix: rfpBlock(ctx.rfp, ctx.opportunityName, ctx.clientName),
       prompt,
       model: ORCHESTRATOR_MODEL,
+      // proposalOutline + 3 long draft sections + whyAberdeen + 6-10 deck
+      // slides is the largest single output in the pipeline; give it room.
+      maxOutputTokens: 16000,
     }),
     sources: sourcesFromHits(hits),
   };
