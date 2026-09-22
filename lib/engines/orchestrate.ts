@@ -72,6 +72,9 @@ export async function orchestrate(
     rfp: pursuit.rfp,
     opportunityName: pursuit.opportunityName,
     clientName: pursuit.clientName,
+    // Passed to every engine so cachedRetrieve can persist / replay
+    // per-pursuit Armory hits and avoid re-embedding on resume.
+    pursuitId: pursuit.id,
   };
 
   const runOne = async <T>(

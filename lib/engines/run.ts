@@ -5,6 +5,10 @@ import type { ParsedRfp } from "@/lib/rfp/parse";
 import { truncateForContext } from "@/lib/rfp/parse";
 import { retrieve, formatContext } from "@/lib/armory/retrieve";
 import type { RetrieveHit } from "@/lib/armory/types";
+import {
+  loadEngineRetrieval,
+  saveEngineRetrieval,
+} from "@/lib/pursuit/store";
 import { ABERDEEN_SYSTEM_PROMPT, armoryBlock } from "@/lib/prompts/system";
 import {
   METHOD_UNDERSTAND,
@@ -28,10 +32,12 @@ import {
   type ProposalDraft,
 } from "./schemas";
 
-// Sonnet 5 is a generation newer AND 33% cheaper than Sonnet 4.6 ($2/$10 vs
-// $3/$15 per MTok); Opus 5 is newer at the same price as Opus 4.7 ($5/$25).
+// Sonnet 5 for every engine. Previously Create ran on Opus 5, but Opus is
+// 2.5x the input price and 2.5x the output price of Sonnet 5 ($5/$25 vs
+// $2/$10 per MTok) for a structured drafting task that Sonnet 5 handles at
+// the same quality — every prompt caching benefit also compounds when every
+// engine shares the same model.
 const ENGINE_MODEL = "anthropic/claude-sonnet-5";
-const ORCHESTRATOR_MODEL = "anthropic/claude-opus-5";
 
 export type EngineName =
   | "understand"
@@ -44,6 +50,13 @@ export type EngineContext = {
   rfp: ParsedRfp;
   opportunityName?: string;
   clientName?: string;
+  /**
+   * Pursuit id — enables retrieval caching. When present, each engine's
+   * retrieval hits are cached under the pursuit record so re-runs, refreshes,
+   * and export re-generation skip the embed+query round-trip and just replay
+   * the stored chunks.
+   */
+  pursuitId?: string;
   /** Prior engine results, if this engine wants to build on them. */
   prior?: Partial<{
     understand: OpportunityBrief;
@@ -53,6 +66,33 @@ export type EngineContext = {
     create: ProposalDraft;
   }>;
 };
+
+/**
+ * Retrieve with per-pursuit cache. If the pursuit id is set and a prior
+ * cached result exists for this engine, replay it; otherwise hit the vector
+ * store and persist the result.
+ */
+async function cachedRetrieve(
+  pursuitId: string | undefined,
+  engine: string,
+  query: string,
+  opts: Parameters<typeof retrieve>[1],
+): Promise<RetrieveHit[]> {
+  if (pursuitId) {
+    const cached = await loadEngineRetrieval<RetrieveHit[]>(pursuitId, engine);
+    if (cached && Array.isArray(cached) && cached.length > 0) {
+      return cached;
+    }
+  }
+  const hits = await retrieve(query, opts);
+  if (pursuitId) {
+    // Fire and forget — a cache miss shouldn't block the engine call.
+    saveEngineRetrieval(pursuitId, engine, hits).catch((err) =>
+      console.error("[cachedRetrieve.save] failed", err),
+    );
+  }
+  return hits;
+}
 
 /**
  * Prompt-caching structure: the system prompt and the RFP block are identical
@@ -238,7 +278,7 @@ export async function runUnderstand(ctx: EngineContext) {
   ]
     .filter(Boolean)
     .join("\n");
-  const hits = await retrieve(query, {
+  const hits = await cachedRetrieve(ctx.pursuitId, "understand", query, {
     k: 4,
     docType: ["boilerplate", "services"] satisfies DocType[],
   });
@@ -277,7 +317,7 @@ export async function runStrategize(
   ]
     .filter(Boolean)
     .join("\n");
-  const hits = await retrieve(query, {
+  const hits = await cachedRetrieve(ctx.pursuitId, "strategize", query, {
     k: 8,
     docType: ["culture", "services", "credentials", "case-study"] satisfies DocType[],
   });
@@ -323,7 +363,7 @@ export async function runMatch(
   ]
     .filter(Boolean)
     .join("\n");
-  const hits = await retrieve(query, {
+  const hits = await cachedRetrieve(ctx.pursuitId, "match", query, {
     k: 10,
     docType: ["case-study", "proposal", "credentials"] satisfies DocType[],
   });
@@ -372,7 +412,7 @@ export async function runDesign(
   ]
     .filter(Boolean)
     .join("\n");
-  const hits = await retrieve(query, {
+  const hits = await cachedRetrieve(ctx.pursuitId, "design", query, {
     k: 6,
     docType: ["services", "proposal", "credentials"] satisfies DocType[],
   });
@@ -401,7 +441,7 @@ export async function runDesign(
     "",
     armoryBlock(contextText),
     "",
-    "TASK: Produce the SolutionBlueprint, applying the SOLUTION-SHAPE DISCIPLINE and the RESPONSE PROFILE rules above. Organize workstreams around the CLIENT'S scope areas and numbering; number deliverables D1, D2, ... and reuse those numbers in the timeline; show the client's own time commitment alongside Aberdeen's; state the seniority reasoning behind the staffing mix. Include a 7-day pursuit plan mapped across the engines (Understand → Strategize → Match → Design → Draft → Challenge → Refine → Submit), with reviewers assigned per day. Size the deliveryTimeline to whatever engagement length the RFP requests.",
+    "TASK: Produce the SolutionBlueprint, applying the SOLUTION-SHAPE DISCIPLINE and the RESPONSE PROFILE rules above. Organize workstreams around the CLIENT'S scope areas and numbering; number deliverables D1, D2, ... and reuse those numbers in the timeline; show the client's own time commitment alongside Aberdeen's; state the seniority reasoning behind the staffing mix. Size the deliveryTimeline to whatever engagement length the RFP requests.",
   ].join("\n");
 
   return {
@@ -433,7 +473,7 @@ export async function runCreate(
   ]
     .filter(Boolean)
     .join("\n");
-  const hits = await retrieve(query, {
+  const hits = await cachedRetrieve(ctx.pursuitId, "create", query, {
     k: 6,
     docType: ["culture", "credentials", "proposal"] satisfies DocType[],
   });
@@ -474,7 +514,6 @@ export async function runCreate(
       system: ABERDEEN_SYSTEM_PROMPT,
       cachedPrefix: rfpBlock(ctx.rfp, ctx.opportunityName, ctx.clientName),
       prompt,
-      model: ORCHESTRATOR_MODEL,
       // proposalOutline + 3 long draft sections + whyAberdeen + 6-10 deck
       // slides is the largest single output in the pipeline; give it room.
       maxOutputTokens: 16000,

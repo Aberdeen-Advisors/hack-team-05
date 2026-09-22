@@ -237,26 +237,6 @@ export const solutionBlueprintSchema = z.object({
       }),
     )
     .min(3),
-  sevenDayPursuitPlan: z
-    .array(
-      z.object({
-        day: z.number().int().min(1).max(7),
-        engine: z.enum([
-          "Understand",
-          "Strategize",
-          "Match",
-          "Design",
-          "Draft",
-          "Challenge",
-          "Refine",
-          "Submit",
-        ]),
-        deliverables: z.array(z.string()),
-        reviewer: z.string().describe("Role responsible for reviewing this day's output."),
-        checkpoint: z.string(),
-      }),
-    )
-    .length(7),
   deliveryTimeline: z
     .array(
       z.object({

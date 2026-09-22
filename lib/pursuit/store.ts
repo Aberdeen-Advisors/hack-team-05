@@ -102,6 +102,12 @@ export type CachedResults = Partial<{
   create: unknown;
   /** Per-engine retrieved-source lists (docName/webUrl/docType), keyed by engine name. */
   sources: Record<string, unknown>;
+  /**
+   * Per-engine retrieval hits (full chunks + metadata). Cached so re-runs,
+   * refreshes, and export re-generation don't re-embed the queries or re-hit
+   * Upstash for the same context. Keyed by engine name.
+   */
+  retrievalHits: Record<string, unknown>;
   runDone: boolean;
   /**
    * Run lease: epoch-ms until which one server invocation owns orchestration.
@@ -164,6 +170,26 @@ export async function saveEngineSources(
     ...existing,
     sources: { ...(existing.sources ?? {}), [engine]: sources },
   });
+}
+
+export async function saveEngineRetrieval(
+  id: string,
+  engine: string,
+  hits: unknown,
+): Promise<void> {
+  const existing = await loadCachedResults(id);
+  await writeCachedResults(id, {
+    ...existing,
+    retrievalHits: { ...(existing.retrievalHits ?? {}), [engine]: hits },
+  });
+}
+
+export async function loadEngineRetrieval<T>(
+  id: string,
+  engine: string,
+): Promise<T | undefined> {
+  const cached = await loadCachedResults(id);
+  return cached.retrievalHits?.[engine] as T | undefined;
 }
 
 export async function markRunDone(id: string): Promise<void> {
