@@ -140,29 +140,58 @@ async function writeCachedResults(
   ]);
 }
 
-export async function saveEngineResult(
+/**
+ * Per-pursuit write mutex. Upstash Vector has no atomic read-modify-write, and
+ * we do that pattern (loadCachedResults -> merge -> writeCachedResults) for
+ * every save. Concurrent invocations on the same pursuit would race and one
+ * would clobber the other — losing an engine result. This chain guarantees
+ * all reads-then-writes on the same pursuit id serialize within a Node
+ * process. Vercel Fluid Compute keeps warm instances so this is meaningful.
+ */
+const writeChains: Map<string, Promise<unknown>> = new Map();
+function serializeWrite<T>(id: string, fn: () => Promise<T>): Promise<T> {
+  const prev = writeChains.get(id) ?? Promise.resolve();
+  const next = prev.catch(() => undefined).then(fn);
+  writeChains.set(
+    id,
+    next.finally(() => {
+      // Clean up so the map doesn't grow forever. Only drop if we're still
+      // the head of the chain (a later write may have already extended it).
+      if (writeChains.get(id) === next) writeChains.delete(id);
+    }),
+  );
+  return next;
+}
+
+export function saveEngineResult(
   id: string,
   engine: string,
   result: unknown,
 ): Promise<void> {
-  const existing = await loadCachedResults(id);
-  await writeCachedResults(id, { ...existing, [engine]: result });
+  return serializeWrite(id, async () => {
+    const existing = await loadCachedResults(id);
+    await writeCachedResults(id, { ...existing, [engine]: result });
+  });
 }
 
-export async function saveLease(id: string, leaseUntil: number): Promise<void> {
-  const existing = await loadCachedResults(id);
-  await writeCachedResults(id, { ...existing, leaseUntil });
+export function saveLease(id: string, leaseUntil: number): Promise<void> {
+  return serializeWrite(id, async () => {
+    const existing = await loadCachedResults(id);
+    await writeCachedResults(id, { ...existing, leaseUntil });
+  });
 }
 
-export async function saveEngineSources(
+export function saveEngineSources(
   id: string,
   engine: string,
   sources: unknown,
 ): Promise<void> {
-  const existing = await loadCachedResults(id);
-  await writeCachedResults(id, {
-    ...existing,
-    sources: { ...(existing.sources ?? {}), [engine]: sources },
+  return serializeWrite(id, async () => {
+    const existing = await loadCachedResults(id);
+    await writeCachedResults(id, {
+      ...existing,
+      sources: { ...(existing.sources ?? {}), [engine]: sources },
+    });
   });
 }
 
@@ -217,7 +246,25 @@ export async function loadEngineRetrieval<T>(
   }
 }
 
-export async function markRunDone(id: string): Promise<void> {
-  const existing = await loadCachedResults(id);
-  await writeCachedResults(id, { ...existing, runDone: true });
+export function markRunDone(id: string): Promise<void> {
+  return serializeWrite(id, async () => {
+    const existing = await loadCachedResults(id);
+    // Belt-and-suspenders: only mark runDone if all five engines are actually
+    // populated. Prevents a partial run from being cached as "complete" and
+    // short-circuiting future refreshes. If an engine got clobbered by a race,
+    // the next refresh will resume-and-run the missing engine instead of
+    // reporting run.done immediately.
+    const engines = ["understand", "strategize", "match", "design", "create"];
+    const allPresent = engines.every(
+      (e) => (existing as Record<string, unknown>)[e] != null,
+    );
+    if (!allPresent) {
+      console.warn(
+        `[markRunDone] refusing to mark ${id} done — missing engines:`,
+        engines.filter((e) => (existing as Record<string, unknown>)[e] == null),
+      );
+      return;
+    }
+    await writeCachedResults(id, { ...existing, runDone: true });
+  });
 }

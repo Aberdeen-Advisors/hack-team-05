@@ -89,6 +89,16 @@ export async function GET(
 
         if (missing.length === 0 && cached.runDone) {
           send({ type: "run.done" });
+        } else if (missing.length > 0 && cached.runDone) {
+          // Inconsistent cache: runDone was set but an engine is missing —
+          // race-condition damage from an earlier build. Ignore runDone and
+          // resume the missing engine(s) so the pursuit self-heals.
+          console.warn(
+            `[stream] inconsistent cache for ${id} — runDone but missing:`,
+            missing,
+            "— resuming missing engines",
+          );
+          await runWithLease(id, pursuit, cached, send);
         } else if ((cached.leaseUntil ?? 0) > Date.now()) {
           // Another invocation owns the run (this is a reconnect / second
           // tab). Do NOT start a duplicate orchestration - poll the cache
