@@ -45,14 +45,13 @@ export async function POST(
   const index = new Index({ url, token });
 
   try {
-    // Delete both the results record AND every per-engine retrieval record.
+    // Delete the meta record, every per-engine result record, and every
+    // per-engine retrieval record.
+    const engines = ["understand", "strategize", "match", "design", "create"];
     const idsToDelete = [
       `pursuit-results:${id}`,
-      `pursuit-retrieval:${id}:understand`,
-      `pursuit-retrieval:${id}:strategize`,
-      `pursuit-retrieval:${id}:match`,
-      `pursuit-retrieval:${id}:design`,
-      `pursuit-retrieval:${id}:create`,
+      ...engines.map((e) => `pursuit-engine:${id}:${e}`),
+      ...engines.map((e) => `pursuit-retrieval:${id}:${e}`),
     ];
     await index.delete(idsToDelete);
     return NextResponse.json({

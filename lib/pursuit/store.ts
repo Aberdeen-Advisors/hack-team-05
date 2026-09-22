@@ -37,6 +37,7 @@ function sentinel(hotIndex: number): number[] {
 }
 const PURSUIT_SENTINEL = 1;
 const RESULTS_SENTINEL = 2;
+const ENGINE_RESULT_SENTINEL = 4;
 
 export type PursuitRecord = {
   id: string;
@@ -48,6 +49,8 @@ export type PursuitRecord = {
 
 const pursuitId = (id: string) => `pursuit:${id}`;
 const resultsId = (id: string) => `pursuit-results:${id}`;
+const engineResultId = (id: string, engine: string) =>
+  `pursuit-engine:${id}:${engine}`;
 
 // ── Pursuit records ────────────────────────────────────────────────
 
@@ -111,7 +114,48 @@ export type CachedResults = Partial<{
   leaseUntil: number;
 }>;
 
-export async function loadCachedResults(id: string): Promise<CachedResults> {
+/**
+ * Metadata / flags for a pursuit — kept small so it fits comfortably in one
+ * Upstash record. Engine results themselves are stored in separate records
+ * (see loadEngineResult below) because on a large RFP the combined result
+ * JSON easily exceeds Upstash's 48KB per-record metadata cap and writes
+ * fail silently.
+ */
+type PursuitMeta = Partial<{
+  sources: Record<string, unknown>;
+  runDone: boolean;
+  leaseUntil: number;
+}>;
+
+const ENGINES = [
+  "understand",
+  "strategize",
+  "match",
+  "design",
+  "create",
+] as const;
+
+async function loadEngineResult(
+  id: string,
+  engine: string,
+): Promise<unknown | undefined> {
+  try {
+    const index = getIndex();
+    const recs = await index.fetch([engineResultId(id, engine)], {
+      includeMetadata: true,
+    });
+    const first = recs?.[0];
+    if (!first?.metadata) return undefined;
+    const raw = (first.metadata as Record<string, unknown>).result;
+    if (typeof raw !== "string") return undefined;
+    return JSON.parse(raw);
+  } catch (err) {
+    console.error(`[engine.load ${engine}] failed`, err);
+    return undefined;
+  }
+}
+
+async function loadPursuitMeta(id: string): Promise<PursuitMeta> {
   try {
     const index = getIndex();
     const recs = await index.fetch([resultsId(id)], { includeMetadata: true });
@@ -119,23 +163,59 @@ export async function loadCachedResults(id: string): Promise<CachedResults> {
     if (!first?.metadata) return {};
     const raw = (first.metadata as Record<string, unknown>).results;
     if (typeof raw !== "string") return {};
-    return JSON.parse(raw) as CachedResults;
+    return JSON.parse(raw) as PursuitMeta;
   } catch (err) {
-    console.error("[results.load] failed", err);
+    console.error("[meta.load] failed", err);
     return {};
   }
 }
 
-async function writeCachedResults(
-  id: string,
-  results: CachedResults,
-): Promise<void> {
+/**
+ * Fan out reads across the meta record + one record per engine and stitch
+ * back into the combined CachedResults shape callers expect. Failures on any
+ * one engine read return undefined for that engine only; callers treat that
+ * as "missing" and re-run.
+ */
+export async function loadCachedResults(id: string): Promise<CachedResults> {
+  const [meta, ...engineResults] = await Promise.all([
+    loadPursuitMeta(id),
+    ...ENGINES.map((e) => loadEngineResult(id, e)),
+  ]);
+  const combined: CachedResults = { ...meta };
+  for (let i = 0; i < ENGINES.length; i++) {
+    const r = engineResults[i];
+    if (r !== undefined) combined[ENGINES[i]] = r;
+  }
+  return combined;
+}
+
+/**
+ * Write ONLY the meta record — sources, runDone, leaseUntil. Engine results
+ * are written to their own per-engine records via writeEngineResult so no
+ * single Upstash record approaches the 48KB metadata cap.
+ */
+async function writeMeta(id: string, meta: PursuitMeta): Promise<void> {
   const index = getIndex();
   await index.upsert([
     {
       id: resultsId(id),
       vector: sentinel(RESULTS_SENTINEL),
-      metadata: { results: JSON.stringify(results) },
+      metadata: { results: JSON.stringify(meta) },
+    },
+  ]);
+}
+
+async function writeEngineResult(
+  id: string,
+  engine: string,
+  result: unknown,
+): Promise<void> {
+  const index = getIndex();
+  await index.upsert([
+    {
+      id: engineResultId(id, engine),
+      vector: sentinel(ENGINE_RESULT_SENTINEL),
+      metadata: { result: JSON.stringify(result) },
     },
   ]);
 }
@@ -163,21 +243,24 @@ function serializeWrite<T>(id: string, fn: () => Promise<T>): Promise<T> {
   return next;
 }
 
+/**
+ * Write an engine result to its own Upstash record. No read-modify-write on
+ * the meta record, so this never races with other saves — and each engine's
+ * result JSON is well under the 48KB cap (even Understand with 30 requirements
+ * comes out to ~15KB).
+ */
 export function saveEngineResult(
   id: string,
   engine: string,
   result: unknown,
 ): Promise<void> {
-  return serializeWrite(id, async () => {
-    const existing = await loadCachedResults(id);
-    await writeCachedResults(id, { ...existing, [engine]: result });
-  });
+  return serializeWrite(id, () => writeEngineResult(id, engine, result));
 }
 
 export function saveLease(id: string, leaseUntil: number): Promise<void> {
   return serializeWrite(id, async () => {
-    const existing = await loadCachedResults(id);
-    await writeCachedResults(id, { ...existing, leaseUntil });
+    const existing = await loadPursuitMeta(id);
+    await writeMeta(id, { ...existing, leaseUntil });
   });
 }
 
@@ -187,8 +270,8 @@ export function saveEngineSources(
   sources: unknown,
 ): Promise<void> {
   return serializeWrite(id, async () => {
-    const existing = await loadCachedResults(id);
-    await writeCachedResults(id, {
+    const existing = await loadPursuitMeta(id);
+    await writeMeta(id, {
       ...existing,
       sources: { ...(existing.sources ?? {}), [engine]: sources },
     });
@@ -248,23 +331,23 @@ export async function loadEngineRetrieval<T>(
 
 export function markRunDone(id: string): Promise<void> {
   return serializeWrite(id, async () => {
-    const existing = await loadCachedResults(id);
+    const existing = await loadCachedResults(id); // fans out to check engines
     // Belt-and-suspenders: only mark runDone if all five engines are actually
     // populated. Prevents a partial run from being cached as "complete" and
-    // short-circuiting future refreshes. If an engine got clobbered by a race,
-    // the next refresh will resume-and-run the missing engine instead of
-    // reporting run.done immediately.
-    const engines = ["understand", "strategize", "match", "design", "create"];
-    const allPresent = engines.every(
+    // short-circuiting future refreshes.
+    const allPresent = ENGINES.every(
       (e) => (existing as Record<string, unknown>)[e] != null,
     );
     if (!allPresent) {
       console.warn(
         `[markRunDone] refusing to mark ${id} done — missing engines:`,
-        engines.filter((e) => (existing as Record<string, unknown>)[e] == null),
+        ENGINES.filter(
+          (e) => (existing as Record<string, unknown>)[e] == null,
+        ),
       );
       return;
     }
-    await writeCachedResults(id, { ...existing, runDone: true });
+    const meta = await loadPursuitMeta(id);
+    await writeMeta(id, { ...meta, runDone: true });
   });
 }
