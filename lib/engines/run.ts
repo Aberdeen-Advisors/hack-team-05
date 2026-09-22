@@ -72,11 +72,12 @@ function runEngine<T>(args: {
   prompt: string;
   model?: string;
   /**
-   * Output-token cap. Anthropic defaults to 4096, which is enough for the
-   * Understand / Strategize / Match / Design schemas but truncates the Create
-   * engine mid-JSON (proposal outline + three draft sections + why-Aberdeen +
-   * 6-10 deck slides can easily run 6-8k output tokens). Bumping to 16k covers
-   * the worst case without materially changing latency or spend.
+   * Output-token cap. Anthropic defaults to 4096, which truncates even the
+   * Understand engine mid-JSON on a large RFP (20+ requirement rows each with
+   * id / requirement / category / mandatory / responseAction). Default 16k
+   * covers the worst realistic case across all five engines; Sonnet 5 and
+   * Opus 5 both support far higher, so the cost impact is only paid when
+   * usage actually approaches it.
    */
   maxOutputTokens?: number;
 }) {
@@ -100,7 +101,7 @@ function runEngine<T>(args: {
       },
     ],
     temperature: 0.4,
-    maxOutputTokens: args.maxOutputTokens ?? 8000,
+    maxOutputTokens: args.maxOutputTokens ?? 16000,
   });
 }
 
