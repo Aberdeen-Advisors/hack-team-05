@@ -102,7 +102,85 @@ function runEngine<T>(args: {
     ],
     temperature: 0.4,
     maxOutputTokens: args.maxOutputTokens ?? 16000,
+    // The AI SDK retries on transient network / rate-limit failures by default.
+    // We bump it explicitly because Sonnet 5 occasionally returns malformed
+    // structured output on the first pass with very large input context
+    // (Design + Create engines feed multiple prior JSON payloads); a single
+    // clean retry usually recovers.
+    maxRetries: 3,
   });
+}
+
+/**
+ * Compact projections of prior engine results, used to feed downstream engines
+ * only the fields they actually need. Passing the full raw JSON of every prior
+ * engine into Design / Create bloats input context past 30-50k tokens on a
+ * complex RFP, which is a known cause of malformed structured-output responses
+ * from Sonnet 5 ('No object generated: could not parse the response').
+ */
+function compactUnderstand(u: OpportunityBrief): Record<string, unknown> {
+  return {
+    responseProfile: u.responseProfile,
+    clientDescriptor: u.clientDescriptor,
+    objectives: u.objectives,
+    painPoints: u.painPoints,
+    scope: u.scope,
+    evaluationCriteria: u.evaluationCriteria,
+    complianceNotes: u.complianceNotes,
+    // Requirements matrix can be enormous — pass only id + one-line requirement
+    // + responseAction so downstream engines can still cite requirements.
+    requirements: (u.requirements ?? []).map((r) => ({
+      id: r.id,
+      requirement: r.requirement,
+      responseAction: r.responseAction,
+      mandatory: r.mandatory,
+    })),
+  };
+}
+
+function compactStrategize(s: WinStrategy): Record<string, unknown> {
+  return {
+    pointOfView: s.pointOfView,
+    // Themes only need title + one-sentence summaries; bullets and evidence
+    // arrays are the biggest inflators of the full JSON.
+    winThemes: (s.winThemes ?? []).map((t) => ({
+      title: t.title,
+      humanSummary: t.humanAngle?.summary,
+      technicalSummary: t.technicalAngle?.summary,
+    })),
+    differentiators: (s.differentiators ?? []).map((d) => ({
+      claim: d.claim,
+      why: d.why,
+    })),
+  };
+}
+
+function compactMatch(m: EvidenceMap): Record<string, unknown> {
+  return {
+    matches: (m.matches ?? []).map((match) => ({
+      rank: match.rank,
+      clientDescriptor: match.clientDescriptor,
+      whyRelevant: match.whyRelevant,
+      outcome: match.outcome,
+      rfpRequirementsAddressed: match.rfpRequirementsAddressed,
+    })),
+    gaps: m.gaps,
+  };
+}
+
+function compactDesign(d: SolutionBlueprint): Record<string, unknown> {
+  return {
+    approach: d.approach,
+    workstreams: (d.workstreams ?? []).map((w) => ({
+      name: w.name,
+      objective: w.objective,
+    })),
+    staffingSummary: (d.staffingModel ?? []).map((s) => s.role).join(", "),
+    deliveryMilestones: (d.deliveryTimeline ?? []).map((t) => ({
+      weekOffset: t.weekOffset,
+      milestone: t.milestone,
+    })),
+  };
 }
 
 /**
@@ -302,12 +380,14 @@ export async function runDesign(
 
   const prior = [
     ctx.understand
-      ? `PRIOR OPPORTUNITY BRIEF:\n${JSON.stringify(ctx.understand, null, 2)}`
+      ? `PRIOR OPPORTUNITY BRIEF (compact):\n${JSON.stringify(compactUnderstand(ctx.understand), null, 2)}`
       : "",
     ctx.strategize
-      ? `PRIOR WIN STRATEGY:\n${JSON.stringify(ctx.strategize, null, 2)}`
+      ? `PRIOR WIN STRATEGY (compact):\n${JSON.stringify(compactStrategize(ctx.strategize), null, 2)}`
       : "",
-    ctx.match ? `PRIOR EVIDENCE MAP:\n${JSON.stringify(ctx.match, null, 2)}` : "",
+    ctx.match
+      ? `PRIOR EVIDENCE MAP (compact):\n${JSON.stringify(compactMatch(ctx.match), null, 2)}`
+      : "",
   ]
     .filter(Boolean)
     .join("\n\n");
@@ -361,13 +441,17 @@ export async function runCreate(
 
   const prior = [
     ctx.understand
-      ? `OPPORTUNITY BRIEF:\n${JSON.stringify(ctx.understand, null, 2)}`
+      ? `OPPORTUNITY BRIEF (compact):\n${JSON.stringify(compactUnderstand(ctx.understand), null, 2)}`
       : "",
     ctx.strategize
-      ? `WIN STRATEGY:\n${JSON.stringify(ctx.strategize, null, 2)}`
+      ? `WIN STRATEGY (compact):\n${JSON.stringify(compactStrategize(ctx.strategize), null, 2)}`
       : "",
-    ctx.match ? `EVIDENCE MAP:\n${JSON.stringify(ctx.match, null, 2)}` : "",
-    ctx.design ? `SOLUTION BLUEPRINT:\n${JSON.stringify(ctx.design, null, 2)}` : "",
+    ctx.match
+      ? `EVIDENCE MAP (compact):\n${JSON.stringify(compactMatch(ctx.match), null, 2)}`
+      : "",
+    ctx.design
+      ? `SOLUTION BLUEPRINT (compact):\n${JSON.stringify(compactDesign(ctx.design), null, 2)}`
+      : "",
   ]
     .filter(Boolean)
     .join("\n\n");
