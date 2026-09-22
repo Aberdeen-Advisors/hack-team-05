@@ -102,12 +102,6 @@ export type CachedResults = Partial<{
   create: unknown;
   /** Per-engine retrieved-source lists (docName/webUrl/docType), keyed by engine name. */
   sources: Record<string, unknown>;
-  /**
-   * Per-engine retrieval hits (full chunks + metadata). Cached so re-runs,
-   * refreshes, and export re-generation don't re-embed the queries or re-hit
-   * Upstash for the same context. Keyed by engine name.
-   */
-  retrievalHits: Record<string, unknown>;
   runDone: boolean;
   /**
    * Run lease: epoch-ms until which one server invocation owns orchestration.
@@ -172,24 +166,55 @@ export async function saveEngineSources(
   });
 }
 
+/**
+ * Retrieval cache — stored in a SEPARATE Upstash record per engine so we
+ * stay well under the 48KB metadata-per-record limit. Retrieval hits carry
+ * full chunk text and 10 chunks of ~800 tokens each is ~12-16KB per engine;
+ * five engines' hits would overflow a single combined record.
+ */
+const RETRIEVAL_SENTINEL = 3;
+const retrievalRecordId = (id: string, engine: string) =>
+  `pursuit-retrieval:${id}:${engine}`;
+
 export async function saveEngineRetrieval(
   id: string,
   engine: string,
   hits: unknown,
 ): Promise<void> {
-  const existing = await loadCachedResults(id);
-  await writeCachedResults(id, {
-    ...existing,
-    retrievalHits: { ...(existing.retrievalHits ?? {}), [engine]: hits },
-  });
+  try {
+    const index = getIndex();
+    await index.upsert([
+      {
+        id: retrievalRecordId(id, engine),
+        vector: sentinel(RETRIEVAL_SENTINEL),
+        metadata: { hits: JSON.stringify(hits) },
+      },
+    ]);
+  } catch (err) {
+    // Cache-write failures are non-fatal — the engine already has its
+    // retrieval results; caching just wouldn't survive a resume.
+    console.error("[retrieval.save] failed", err);
+  }
 }
 
 export async function loadEngineRetrieval<T>(
   id: string,
   engine: string,
 ): Promise<T | undefined> {
-  const cached = await loadCachedResults(id);
-  return cached.retrievalHits?.[engine] as T | undefined;
+  try {
+    const index = getIndex();
+    const recs = await index.fetch([retrievalRecordId(id, engine)], {
+      includeMetadata: true,
+    });
+    const first = recs?.[0];
+    if (!first?.metadata) return undefined;
+    const raw = (first.metadata as Record<string, unknown>).hits;
+    if (typeof raw !== "string") return undefined;
+    return JSON.parse(raw) as T;
+  } catch (err) {
+    console.error("[retrieval.load] failed", err);
+    return undefined;
+  }
 }
 
 export async function markRunDone(id: string): Promise<void> {

@@ -140,7 +140,8 @@ function runEngine<T>(args: {
         ],
       },
     ],
-    temperature: 0.4,
+    // Sonnet 5 ignores the temperature parameter (warns about it in the AI
+    // SDK logs) — omit it entirely rather than pass a value that's dropped.
     maxOutputTokens: args.maxOutputTokens ?? 16000,
     // The AI SDK retries on transient network / rate-limit failures by default.
     // We bump it explicitly because Sonnet 5 occasionally returns malformed

@@ -126,8 +126,8 @@ const angleSchema = z.object({
           ),
       }),
     )
-    .min(3)
-    .max(4),
+    .min(1)
+    .describe("Aim for 3-4 bullets."),
 });
 
 export const winStrategySchema = z.object({
@@ -149,8 +149,8 @@ export const winStrategySchema = z.object({
         evidence: z.array(evidenceSchema),
       }),
     )
-    .min(3)
-    .max(4),
+    .min(1)
+    .describe("Aim for 3-4 win themes."),
   differentiators: z
     .array(
       z.object({
@@ -203,7 +203,7 @@ export const evidenceMapSchema = z.object({
       }),
     )
     .min(1)
-    .max(4),
+    .describe("Aim for 1-4 matches, ranked by closeness of analog."),
   gaps: z
     .array(z.string())
     .describe(
@@ -225,7 +225,8 @@ export const solutionBlueprintSchema = z.object({
         keyActivities: z.array(z.string()),
       }),
     )
-    .min(3),
+    .min(1)
+    .describe("Aim for 3-5 workstreams organized around the client's scope areas."),
   staffingModel: z
     .array(
       z.object({
@@ -236,7 +237,8 @@ export const solutionBlueprintSchema = z.object({
           .describe("Rough allocation percentage for this engagement."),
       }),
     )
-    .min(3),
+    .min(1)
+    .describe("Aim for 3-6 named roles sized to the engagement."),
   deliveryTimeline: z
     .array(
       z.object({
@@ -295,10 +297,9 @@ export const proposalDraftSchema = z.object({
           .describe("Layout hint for the pptx exporter."),
       }),
     )
-    .min(6)
-    .max(10)
+    .min(1)
     .describe(
-      "Executive deck: Title, Understanding, Win Themes, Approach, Human Element, Why Aberdeen, Closing.",
+      "Executive deck (aim for 6-10 slides): Title, Understanding, Win Themes, Approach, Human Element, Why Aberdeen, Closing.",
     ),
 });
 export type ProposalDraft = z.infer<typeof proposalDraftSchema>;
