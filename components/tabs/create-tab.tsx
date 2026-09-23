@@ -70,37 +70,42 @@ export function CreateTab({
   return (
     <div className="flex flex-col gap-6">
       {isStreaming && <StreamingHint label="proposal draft" />}
-      <Card className="p-6">
-        <SectionHeading>Proposal outline</SectionHeading>
-        <div className="mt-3 flex flex-col gap-3">
-          {(data.proposalOutline ?? []).map((s, i) => (
-            <div key={i} className="rounded-md border border-border p-4">
-              <p className="text-sm font-medium text-aberdeen-blue">
-                {i + 1}.{" "}
-                <Editable
-                  value={s?.section}
-                  onChange={(v) => updateOutline(i, { section: v })}
-                  placeholder="Section name"
-                />
-              </p>
-              <div className="mt-1 text-xs italic text-onyx/70">
-                <Editable
-                  value={s?.purpose}
-                  onChange={(v) => updateOutline(i, { purpose: v })}
-                  placeholder="Section purpose"
-                />
+      {/* proposalOutline is optional on new runs — the DOCX export walks the
+          proposal spine directly, so we only render this card when a legacy
+          cached pursuit still carries the outline. */}
+      {(data.proposalOutline?.length ?? 0) > 0 && (
+        <Card className="p-6">
+          <SectionHeading>Proposal outline</SectionHeading>
+          <div className="mt-3 flex flex-col gap-3">
+            {(data.proposalOutline ?? []).map((s, i) => (
+              <div key={i} className="rounded-md border border-border p-4">
+                <p className="text-sm font-medium text-aberdeen-blue">
+                  {i + 1}.{" "}
+                  <Editable
+                    value={s?.section}
+                    onChange={(v) => updateOutline(i, { section: v })}
+                    placeholder="Section name"
+                  />
+                </p>
+                <div className="mt-1 text-xs italic text-onyx/70">
+                  <Editable
+                    value={s?.purpose}
+                    onChange={(v) => updateOutline(i, { purpose: v })}
+                    placeholder="Section purpose"
+                  />
+                </div>
+                <div className="mt-2 pl-5 text-sm text-onyx">
+                  <EditableList
+                    items={s?.keyPoints}
+                    onChange={(v) => updateOutline(i, { keyPoints: v })}
+                    itemPlaceholder="Add a key point"
+                  />
+                </div>
               </div>
-              <div className="mt-2 pl-5 text-sm text-onyx">
-                <EditableList
-                  items={s?.keyPoints}
-                  onChange={(v) => updateOutline(i, { keyPoints: v })}
-                  itemPlaceholder="Add a key point"
-                />
-              </div>
-            </div>
-          ))}
-        </div>
-      </Card>
+            ))}
+          </div>
+        </Card>
+      )}
 
       <Card className="p-6">
         <SectionHeading>Executive Summary — draft</SectionHeading>
@@ -150,6 +155,10 @@ export function CreateTab({
         </div>
       </Card>
 
+      {/* deckSpec is optional on new runs — the PPT export builds slides
+          directly from the other engines' results. Only render this card
+          when a legacy cached pursuit still carries a slide spec. */}
+      {(data.deckSpec?.length ?? 0) > 0 && (
       <Card className="p-6">
         <SectionHeading>Executive deck spec</SectionHeading>
         <div className="mt-3 grid gap-3 md:grid-cols-2">
@@ -187,6 +196,7 @@ export function CreateTab({
           ))}
         </div>
       </Card>
+      )}
     </div>
   );
 }
