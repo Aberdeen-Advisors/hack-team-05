@@ -38,10 +38,11 @@ export function GanttTimeline({ items }: { items: GanttItem[] }) {
     return ((t - minT) / span) * 100;
   };
 
-  // Lane assignment with collision avoidance: labels are ~w-40 (about 14% of
-  // a typical bar), so two labels in the same lane need that much separation.
+  // Lane assignment with collision avoidance. Labels are ~w-36 (144px). On a
+  // typical timeline area (~800-1200px wide) that's 12-18% of the container,
+  // so two labels in the same lane need at least that much separation.
   // Lanes: 0 = above near, 1 = below near, 2 = above far, 3 = below far.
-  const MIN_GAP = 14;
+  const MIN_GAP = 18;
   const laneLast = [-Infinity, -Infinity, -Infinity, -Infinity];
   const markers = valid.map((r, i) => {
     const pct = pctFor(r.t as number);
@@ -50,17 +51,28 @@ export function GanttTimeline({ items }: { items: GanttItem[] }) {
       lane = laneLast.indexOf(Math.min(...laneLast)); // least-crowded fallback
     }
     laneLast[lane] = pct;
-    return { ...r, idx: i, pct, lane };
+    // Edge-anchor labels so they don't overflow the timeline area (which
+    // would collide with the TBD column or the container border).
+    // < 10% : left-anchor; > 90% : right-anchor; else centered.
+    const anchor: "left" | "right" | "center" =
+      pct < 10 ? "left" : pct > 90 ? "right" : "center";
+    return { ...r, idx: i, pct, lane, anchor };
   });
   const usesFarLanes = markers.some((m) => m.lane >= 2);
 
   return (
     <div className="flex flex-col gap-4 rounded-lg border border-border/70 bg-background p-6">
-      <div className="flex items-stretch gap-6">
-        {/* Main timeline bar */}
-        <div className={usesFarLanes ? "relative flex-1 py-24" : "relative flex-1 py-10"}>
+      <div className="flex items-stretch gap-10">
+        {/* Main timeline bar. Horizontal padding reserves room for edge labels. */}
+        <div
+          className={
+            usesFarLanes
+              ? "relative flex-1 px-20 py-24"
+              : "relative flex-1 px-20 py-10"
+          }
+        >
           {/* End caps */}
-          <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2">
+          <div className="absolute left-20 right-20 top-1/2 -translate-y-1/2">
             <div className="relative h-1 w-full rounded-full bg-gradient-to-r from-verdigris via-aberdeen-blue/70 to-aberdeen-blue">
               <div className="absolute -left-1 top-1/2 h-3 w-3 -translate-y-1/2 rounded-full bg-verdigris" />
               <div className="absolute -right-1 top-1/2 h-3 w-3 -translate-y-1/2 rounded-full bg-aberdeen-blue" />
@@ -69,59 +81,70 @@ export function GanttTimeline({ items }: { items: GanttItem[] }) {
 
           {/* Markers */}
           <div className="relative h-full">
-            {markers.map((m) => (
-              <div
-                key={m.idx}
-                className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2"
-                style={{ left: `${m.pct}%` }}
-              >
-                {/* Vertical connector line */}
+            {markers.map((m) => {
+              // Label position: fixed-width block, either centered on the
+              // marker (default) or edge-anchored so it stays inside the
+              // padded timeline area.
+              const labelBase = "absolute w-36";
+              const labelAnchor =
+                m.anchor === "left"
+                  ? "left-0 text-left"
+                  : m.anchor === "right"
+                    ? "right-0 text-right"
+                    : "left-1/2 -translate-x-1/2 text-center";
+              const labelVertical =
+                [
+                  "bottom-full mb-9",
+                  "top-full mt-9",
+                  "bottom-full mb-[4.75rem]",
+                  "top-full mt-[4.75rem]",
+                ][m.lane];
+              return (
                 <div
-                  className={
-                    [
-                      "absolute left-1/2 top-1/2 h-8 w-px -translate-x-1/2 -translate-y-full bg-border",
-                      "absolute left-1/2 top-1/2 h-8 w-px -translate-x-1/2 bg-border",
-                      "absolute left-1/2 top-1/2 h-[4.5rem] w-px -translate-x-1/2 -translate-y-full bg-border",
-                      "absolute left-1/2 top-1/2 h-[4.5rem] w-px -translate-x-1/2 bg-border",
-                    ][m.lane]
-                  }
-                />
-                {/* Marker itself */}
-                {m.kind === "milestone" ? (
-                  <div className="relative z-10 h-3 w-3 rotate-45 border border-aberdeen-blue bg-aberdeen-blue" />
-                ) : (
-                  <div className="relative z-10 h-3 w-3 rounded-full border-2 border-verdigris bg-background" />
-                )}
-
-                {/* Label position by lane: above/below, near/far */}
-                <div
-                  className={
-                    [
-                      "absolute bottom-full left-1/2 mb-9 w-40 -translate-x-1/2 text-center",
-                      "absolute top-full left-1/2 mt-9 w-40 -translate-x-1/2 text-center",
-                      "absolute bottom-full left-1/2 mb-[4.75rem] w-40 -translate-x-1/2 text-center",
-                      "absolute top-full left-1/2 mt-[4.75rem] w-40 -translate-x-1/2 text-center",
-                    ][m.lane]
-                  }
+                  key={m.idx}
+                  className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2"
+                  style={{ left: `${m.pct}%` }}
                 >
-                  <p
-                    className="line-clamp-2 text-xs font-medium leading-snug text-aberdeen-blue"
-                    title={m.label}
+                  {/* Vertical connector line (always centered on the marker) */}
+                  <div
+                    className={
+                      [
+                        "absolute left-1/2 top-1/2 h-8 w-px -translate-x-1/2 -translate-y-full bg-border",
+                        "absolute left-1/2 top-1/2 h-8 w-px -translate-x-1/2 bg-border",
+                        "absolute left-1/2 top-1/2 h-[4.5rem] w-px -translate-x-1/2 -translate-y-full bg-border",
+                        "absolute left-1/2 top-1/2 h-[4.5rem] w-px -translate-x-1/2 bg-border",
+                      ][m.lane]
+                    }
+                  />
+                  {/* Marker itself */}
+                  {m.kind === "milestone" ? (
+                    <div className="relative z-10 h-3 w-3 rotate-45 border border-aberdeen-blue bg-aberdeen-blue" />
+                  ) : (
+                    <div className="relative z-10 h-3 w-3 rounded-full border-2 border-verdigris bg-background" />
+                  )}
+
+                  <div
+                    className={`${labelBase} ${labelAnchor} ${labelVertical}`}
                   >
-                    {m.label}
-                  </p>
-                  <p className="mt-0.5 font-mono text-[10px] text-verdigris">
-                    {m.displayDate}
-                  </p>
+                    <p
+                      className="line-clamp-2 text-xs font-medium leading-snug text-aberdeen-blue"
+                      title={m.label}
+                    >
+                      {m.label}
+                    </p>
+                    <p className="mt-0.5 font-mono text-[10px] text-verdigris">
+                      {m.displayDate}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
         {/* TBD column on the right, if any */}
         {tbd.length > 0 && (
-          <div className="flex w-40 flex-col gap-2 border-l border-dashed border-border/70 pl-4">
+          <div className="flex w-40 flex-shrink-0 flex-col gap-2 border-l border-dashed border-border/70 pl-4">
             <p className="text-[10px] font-semibold uppercase tracking-widest text-onyx/50">
               Timing TBD
             </p>
