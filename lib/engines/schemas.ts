@@ -175,7 +175,7 @@ export const evidenceMapSchema = z.object({
   matches: z
     .array(
       z.object({
-        rank: z.number().int().min(1),
+        rank: z.number().int().describe("1-based rank; 1 is the closest analog."),
         docName: z.string().describe("Name of the Armory doc / case study."),
         docTag: z.string().describe("The [C#] tag from ARMORY CONTEXT."),
         clientDescriptor: z
@@ -202,8 +202,10 @@ export const evidenceMapSchema = z.object({
           ),
       }),
     )
-    .min(1)
-    .describe("Aim for 1-4 matches, ranked by closeness of analog."),
+    .describe(
+      "Up to 4 entries, closest analog first. Return an EMPTY array when nothing in the " +
+        "ARMORY CONTEXT is a genuine analog - never stretch an adjacent credential to fill it.",
+    ),
   gaps: z
     .array(z.string())
     .describe(

@@ -54,6 +54,13 @@ export function MatchTab({
       {isStreaming && <StreamingHint label="evidence map" />}
       <div>
         <SectionHeading>Ranked Aberdeen evidence</SectionHeading>
+        {!isStreaming && (data.matches?.length ?? 0) === 0 && (
+          <Card className="mt-3 p-6 text-sm text-onyx/70">
+            No Armory engagement is a genuine analog for this request. Nothing
+            was stretched to fill the gap; see the evidence gaps below for what
+            the pursuit team needs to source.
+          </Card>
+        )}
         <div className="mt-3 flex flex-col gap-4">
           {(data.matches ?? []).map((m, i) => (
             <Card key={i} className="p-6">

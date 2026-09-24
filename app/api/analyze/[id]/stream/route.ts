@@ -152,6 +152,14 @@ export async function GET(
           type: "run.error",
           error: err instanceof Error ? err.message : String(err),
         });
+        // This invocation is done with the run. Release the lease so the
+        // next connection resumes from cache immediately instead of polling
+        // for up to LEASE_MS waiting for a dead owner.
+        try {
+          await saveLease(id, 0);
+        } catch (leaseErr) {
+          console.error("[stream] lease release failed", leaseErr);
+        }
       } finally {
         clearInterval(heartbeat);
         controller.close();

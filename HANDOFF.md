@@ -15,7 +15,7 @@ answers those criticisms one by one.
 
 | Thing | Location |
 |---|---|
-| **This repo (canonical)** | `github.com/Aberdeen-Advisors/hack-team-05-fork`, branch `main`. Local checkout: `Claude Code/pursuit-final/pursuit`, remote `origin`. The remote `personal` (harminderb20/aberdeen-pursuit-final) is a backup; safe to archive. |
+| **This repo (canonical, DEPLOYED)** | `github.com/Aberdeen-Advisors/hack-team-05`, branch `main`. Local checkout: `Claude Code/pursuit-final/hack-team-05`. Production is built from this folder. `hack-team-05-fork` (local `pursuit-final/pursuit`) is a STALE ancestor as of 2026-09-24 - do not edit it; `personal` (harminderb20/aberdeen-pursuit-final) is a backup. |
 | Original submissions | `Aberdeen-Advisors/hack-team-05` (Concierge) and `Aberdeen-Advisors/hack-team-03` (Accelerator, incl. local desktop app + MCP). Local clones sit next to this repo. |
 | Production | `pursuit-copilot.vercel.app`, Vercel team `aberdeen-advisors`, project `pursuit-copilot`, **Hobby plan** (functions capped at 300s). Deploys are CLI-only (not git-connected): `npx vercel deploy --prod --yes` from this folder. **The user must run deploys** — the agent's permission layer blocks deploy/publish commands; give the user the command instead. |
 | Method files | `method/aberdeen-pursuit/` (v0.4.0 skill: 5 stages + 8 references). Distilled into `lib/prompts/method.ts`. The skill's source repo is `harminderb20/aberdeen-pursuit-accelerator` (benchmark docs live there: 79–83% blind vs a real submitted response, 0 fabrications). |
@@ -49,6 +49,7 @@ Exports: `lib/export/docx.ts` / `pptx.ts` — deterministic templates, no model.
 7. **Eight response profiles**: Understand classifies (schema `responseProfile` + `profileRationale`), downstream engines get `profileRuleBlock()`, workspace shows a profile badge. **Verification pending**: test with a non-RFP document
 8. Timeline fixes: 4-lane label collision avoidance; year-less dates pinned to current year (V8 defaults them to 2001)
 9. `/roadmap` page (each item traces to a judge note), truthful landing copy (citation-chip overclaim removed), both-teams footer, v0.4
+10. **Match schema-failure fix (2026-09-24)**: the Wayfarer mock RFP failed Match with "No object generated: response did not match schema". `evidenceMapSchema.matches` kept a hard `.min(1)` the model is not constrained by, so an honest empty list (no retail analog in the corpus) failed Zod and killed the run; the SDK `maxRetries` does not cover validation failures. Bound removed (trimmed to 4 in `orchestrate.ts`), one automatic retry on `NoObjectGeneratedError` with the Zod issues in the error text, Strategize/Match now `allSettled` so the survivor is cached, lease released on run.error so a refresh resumes at once, Retry buttons + empty-evidence state in the UI. Strategize and Match running in parallel is by design, not the bug.
 
 ## Next work queue (user-approved order)
 

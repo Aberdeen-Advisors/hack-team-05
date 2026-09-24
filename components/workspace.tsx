@@ -383,8 +383,15 @@ function WorkspaceBody({
         </div>
         {runError && (
           <div className="flex items-center gap-2 rounded-md border border-jasper/40 bg-jasper/[0.04] px-3 py-2 text-sm text-jasper">
-            <AlertCircle className="h-4 w-4" />
-            {runError}
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            <span className="flex-1">{runError}</span>
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="shrink-0 rounded-md border border-jasper/40 bg-white px-3 py-1 text-xs font-medium text-jasper transition-colors hover:bg-jasper/10"
+            >
+              Retry
+            </button>
           </div>
         )}
       </div>
