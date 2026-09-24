@@ -5,25 +5,25 @@ import { brand } from "@/lib/branding";
 export function SiteHeader() {
   return (
     <header className="border-b border-border/60 bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-40">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-        <Link href="/" className="flex items-center gap-3">
+      <div className="mx-auto flex h-20 max-w-6xl items-center justify-between px-6">
+        <Link href="/" className="flex items-center gap-4">
           <Image
             src={brand.logos.primarySvg}
             alt={`${brand.companyName} logo`}
-            width={126}
-            height={28}
+            width={144}
+            height={32}
             priority
           />
           {/* Product identity lockup — pursuit icon + product name */}
-          <span className="hidden items-center gap-2 border-l border-border pl-3 sm:flex">
+          <span className="hidden items-center gap-2.5 border-l border-border pl-4 sm:flex">
             <Image
               src={brand.logos.productIconPng}
               alt=""
-              width={28}
-              height={28}
+              width={52}
+              height={52}
               priority
             />
-            <span className="text-sm font-semibold tracking-tight text-aberdeen-blue">
+            <span className="text-base font-semibold tracking-tight text-aberdeen-blue">
               {brand.productName}
             </span>
           </span>
