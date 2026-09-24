@@ -29,6 +29,29 @@ const POLL_INTERVAL_MS = 3_000;
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /**
+ * Bound an async operation so it can never hang the caller past `ms`.
+ * On timeout the returned promise rejects and the underlying operation is
+ * abandoned (best-effort; there's no cancellation for the fetch inside
+ * Upstash's SDK). Used for cache writes so a transient Upstash outage
+ * doesn't stall the SSE stream past Vercel's function timeout.
+ */
+function withTimeout<T>(
+  p: Promise<T>,
+  ms: number,
+  label: string,
+): Promise<T> {
+  return Promise.race<T>([
+    p,
+    new Promise<T>((_, reject) =>
+      setTimeout(
+        () => reject(new Error(`${label} timed out after ${ms}ms`)),
+        ms,
+      ),
+    ),
+  ]);
+}
+
+/**
  * GET /api/analyze/[id]/stream
  * SSE stream — replays cached engine results if present, then orchestrates
  * any missing engines. Full cache hits complete in milliseconds so the
@@ -181,29 +204,44 @@ async function runWithLease(
   cached: CachedResults,
   send: (event: EngineEvent | { type: "run.error"; error: string }) => void,
 ) {
-  await saveLease(id, Date.now() + LEASE_MS);
+  await withTimeout(saveLease(id, Date.now() + LEASE_MS), 8_000, "saveLease");
+
+  /**
+   * Cap every cache-write await at a few seconds. Upstash SDK retries
+   * internally on transient failures (up to ~90s per call), and if a save
+   * hangs while an engine is done, it can stall the whole SSE stream past
+   * Vercel's 300s function cap. Losing a cache write is recoverable — the
+   * next reconnect will re-run the missing engine — but blowing the function
+   * timeout leaves everything half-done.
+   */
+  const CACHE_WRITE_TIMEOUT_MS = 6_000;
 
   const persistingSend = async (
     event: EngineEvent | { type: "run.error"; error: string },
   ) => {
     if (event.type === "engine.done") {
-      try {
-        await saveEngineResult(id, event.engine, event.result);
-      } catch (err) {
-        console.error("[stream] cache write failed", err);
-      }
+      withTimeout(
+        saveEngineResult(id, event.engine, event.result),
+        CACHE_WRITE_TIMEOUT_MS,
+        `saveEngineResult:${event.engine}`,
+      ).catch((err) => console.error("[stream] cache write failed", err));
     }
     if (event.type === "engine.sources") {
-      try {
-        await saveEngineSources(id, event.engine, event.sources);
-      } catch (err) {
-        console.error("[stream] sources cache write failed", err);
-      }
+      withTimeout(
+        saveEngineSources(id, event.engine, event.sources),
+        CACHE_WRITE_TIMEOUT_MS,
+        `saveEngineSources:${event.engine}`,
+      ).catch((err) =>
+        console.error("[stream] sources cache write failed", err),
+      );
     }
     if (event.type === "run.done") {
+      // Await run.done writes (short) so the flag is committed before the
+      // client disconnects — but still bounded so a hung write doesn't
+      // leave the stream open past the function cap.
       try {
-        await markRunDone(id);
-        await saveLease(id, 0);
+        await withTimeout(markRunDone(id), CACHE_WRITE_TIMEOUT_MS, "markRunDone");
+        await withTimeout(saveLease(id, 0), CACHE_WRITE_TIMEOUT_MS, "clearLease");
       } catch (err) {
         console.error("[stream] cache mark run.done failed", err);
       }
