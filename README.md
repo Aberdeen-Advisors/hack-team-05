@@ -2,7 +2,11 @@
   <img src="assets/Aberdeen Primary Logo - Blue.svg" alt="Aberdeen Advisors" width="240" />
 </p>
 
-<h1 align="center">Pursuit</h1>
+<p align="center">
+  <img src="assets/pursuit_intelligence.png" alt="Pursuit Accelerator" width="120" />
+</p>
+
+<h1 align="center">Pursuit Accelerator</h1>
 
 <p align="center">
   <strong>The control tower for a single RFP.</strong><br/>
@@ -37,7 +41,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/images/demo.gif" alt="Pursuit Concierge in action — landing, launcher, workspace tabs streaming in, on-brand deck export" width="900" />
+  <img src="docs/images/demo.gif" alt="Pursuit Accelerator in action — landing, launcher, workspace tabs streaming in, on-brand deck export" width="900" />
 </p>
 
 <p align="center">
@@ -72,7 +76,7 @@ Consulting firms typically receive attractive RFPs on tight timelines — often 
 
 Doing this manually consumes hours or days **before the team even starts producing the proposal**. Competitors are all working from the same starting point. The result is late nights, generic responses, and pursuits that lose on differentiation rather than merit.
 
-**Pursuit Concierge turns that first week into a first hour.** Drop the RFP, click one button, and you get a pursuit brief and proposal starter grounded in Aberdeen's own Culture Charter, case studies, and prior proposals — with the human element leading every claim.
+**Pursuit Accelerator turns that first week into a first hour.** Drop the RFP, click one button, and you get a pursuit brief and proposal starter grounded in Aberdeen's own Culture Charter, case studies, and prior proposals — with the human element leading every claim.
 
 ---
 
@@ -109,7 +113,7 @@ The Culture Charter, the referral-based workforce, the Inc 5000 recognition, the
 ### 1. Drop the RFP
 
 <p align="center">
-  <img src="docs/images/launcher.png" alt="Pursuit Concierge launcher" width="900" />
+  <img src="docs/images/launcher.png" alt="Pursuit Accelerator launcher" width="900" />
 </p>
 
 Give the pursuit a short name (something recognizable to your team), optionally give the client's real name (it will be anonymized in every output), and drop the RFP file. PDF, DOCX, or TXT — up to 40 MB. Click **Analyze Opportunity**.
@@ -358,7 +362,7 @@ This repo is Aberdeen Hackathon 2026 team **hack-team-05**'s submission.
 
 | Path | What's inside |
 | --- | --- |
-| `app/`, `components/`, `lib/` | The Pursuit Concierge Next.js application described above. |
+| `app/`, `components/`, `lib/` | The Pursuit Accelerator Next.js application described above. |
 | [`reference/mock-rfps/`](reference/mock-rfps/) | Three fictional sample RFPs used as test input: Cascadia Outdoor Brands (IT/ERP modernization), Sonora Iced Tea (five-year cost and margin strategy), and Wayfarer Market Co. (growth without eroding crew culture). Each carries requirements and a weighted scoring rubric the tool answers against. |
 | [`docs/`](docs/) | Build notes and output specs — Response Action definitions, proposal layout conventions, and the README screenshots. |
 | [`deliverables/pursuit-concierge-aberdeen-hackathon-team-05.pptx`](deliverables/pursuit-concierge-aberdeen-hackathon-team-05.pptx) | Submission presentation deck. |

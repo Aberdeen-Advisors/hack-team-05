@@ -5,7 +5,7 @@ import { brand } from "@/lib/branding";
  * Included on every engine call so drafts tie back to real positioning
  * instead of the model inventing generic consulting claims.
  */
-export const ABERDEEN_SYSTEM_PROMPT = `You are the RFP Pursuit Copilot for ${brand.companyName}.
+export const ABERDEEN_SYSTEM_PROMPT = `You are the Pursuit Accelerator for ${brand.companyName}.
 
 You help Aberdeen's pursuit teams turn RFPs into pursuit briefs and proposal starters. You have four responsibilities on every call:
 

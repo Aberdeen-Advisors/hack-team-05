@@ -24,8 +24,10 @@ export const brand = {
     primaryPng: "/brand/aberdeen-logo.png",
     markSvg: "/brand/aberdeen-mark.svg",
     markPng: "/brand/aberdeen-mark.png",
+    /** Product icon — rocket + PURSUIT wordmark, used in the site header and as favicon. */
+    productIconPng: "/brand/pursuit-accelerator.png",
   },
-  productName: "Pursuit Copilot",
+  productName: "Pursuit Accelerator",
   companyName: "Aberdeen Advisors",
 } as const;
 

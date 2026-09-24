@@ -15,11 +15,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Aberdeen Pursuit Copilot",
+  title: "Aberdeen Pursuit Accelerator",
   description:
-    "Pursuit copilot for Aberdeen Advisors. Turns any inbound client request - RFP, RFI, RFQ, questionnaire, or SOW - into a pursuit brief, evidence map, and profile-shaped response draft.",
+    "Pursuit accelerator for Aberdeen Advisors. Turns any inbound client request - RFP, RFI, RFQ, questionnaire, or SOW - into a pursuit brief, evidence map, and profile-shaped response draft.",
   icons: {
-    icon: "/brand/aberdeen-mark.svg",
+    icon: "/brand/pursuit-accelerator.png",
   },
 };
 

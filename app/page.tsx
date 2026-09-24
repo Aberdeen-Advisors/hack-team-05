@@ -56,7 +56,7 @@ export default function Home() {
         />
         <div className="relative mx-auto grid w-full max-w-7xl grid-cols-1 gap-16 px-6 pt-24 pb-24 lg:grid-cols-[1.1fr_1fr] lg:items-start">
           <div className="flex flex-col gap-8 lg:pt-8">
-            <TagChip tone="onDark">Pursuit Copilot · Aberdeen Advisors</TagChip>
+            <TagChip tone="onDark">Pursuit Accelerator · Aberdeen Advisors</TagChip>
             <h1 className="text-5xl font-bold leading-[1.02] tracking-tight text-white sm:text-[64px]">
               The control tower for a single pursuit.
               <br />
@@ -66,7 +66,7 @@ export default function Home() {
             </h1>
             <p className="max-w-xl text-lg font-light leading-relaxed text-white/80">
               Drop any inbound client request — an RFP, RFI, RFQ,
-              questionnaire, or SOW. Pursuit Copilot classifies the response
+              questionnaire, or SOW. Pursuit Accelerator classifies the response
               profile, leads with{" "}
               <span className="font-semibold text-white">
                 Aberdeen&apos;s human element
