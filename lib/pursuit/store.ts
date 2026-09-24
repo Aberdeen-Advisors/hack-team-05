@@ -39,6 +39,40 @@ const PURSUIT_SENTINEL = 1;
 const RESULTS_SENTINEL = 2;
 const ENGINE_RESULT_SENTINEL = 4;
 
+/**
+ * Retry helper for Upstash operations. The Upstash Vector backend has
+ * occasional transient outages ("The vector store backend is currently
+ * unavailable") that clear in seconds; a single retry with a short backoff
+ * turns most of those into successes without the caller noticing. We only
+ * retry on network / 5xx-shaped errors — permanent failures (missing env
+ * vars, bad payload) throw immediately.
+ */
+async function withUpstashRetry<T>(
+  op: () => Promise<T>,
+  label: string,
+  attempts = 3,
+): Promise<T> {
+  let lastErr: unknown;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await op();
+    } catch (err) {
+      lastErr = err;
+      const msg = err instanceof Error ? err.message : String(err);
+      const transient =
+        /unavailable|timeout|ETIMEDOUT|ECONNRESET|ENOTFOUND|5\d\d/i.test(msg);
+      if (!transient || i === attempts - 1) throw err;
+      // Backoff: 400ms, 1200ms, 3600ms
+      const backoff = 400 * Math.pow(3, i);
+      console.warn(
+        `[upstash retry] ${label} attempt ${i + 1} failed (${msg}); retrying in ${backoff}ms`,
+      );
+      await new Promise((r) => setTimeout(r, backoff));
+    }
+  }
+  throw lastErr;
+}
+
 export type PursuitRecord = {
   id: string;
   createdAt: string;
@@ -56,13 +90,17 @@ const engineResultId = (id: string, engine: string) =>
 
 export async function savePursuit(record: PursuitRecord): Promise<void> {
   const index = getIndex();
-  await index.upsert([
-    {
-      id: pursuitId(record.id),
-      vector: sentinel(PURSUIT_SENTINEL),
-      metadata: { pursuit: JSON.stringify(record) },
-    },
-  ]);
+  await withUpstashRetry(
+    () =>
+      index.upsert([
+        {
+          id: pursuitId(record.id),
+          vector: sentinel(PURSUIT_SENTINEL),
+          metadata: { pursuit: JSON.stringify(record) },
+        },
+      ]),
+    "savePursuit",
+  );
 }
 
 export async function loadPursuit(id: string): Promise<PursuitRecord | null> {
@@ -196,13 +234,17 @@ export async function loadCachedResults(id: string): Promise<CachedResults> {
  */
 async function writeMeta(id: string, meta: PursuitMeta): Promise<void> {
   const index = getIndex();
-  await index.upsert([
-    {
-      id: resultsId(id),
-      vector: sentinel(RESULTS_SENTINEL),
-      metadata: { results: JSON.stringify(meta) },
-    },
-  ]);
+  await withUpstashRetry(
+    () =>
+      index.upsert([
+        {
+          id: resultsId(id),
+          vector: sentinel(RESULTS_SENTINEL),
+          metadata: { results: JSON.stringify(meta) },
+        },
+      ]),
+    `writeMeta:${id}`,
+  );
 }
 
 async function writeEngineResult(
@@ -211,13 +253,17 @@ async function writeEngineResult(
   result: unknown,
 ): Promise<void> {
   const index = getIndex();
-  await index.upsert([
-    {
-      id: engineResultId(id, engine),
-      vector: sentinel(ENGINE_RESULT_SENTINEL),
-      metadata: { result: JSON.stringify(result) },
-    },
-  ]);
+  await withUpstashRetry(
+    () =>
+      index.upsert([
+        {
+          id: engineResultId(id, engine),
+          vector: sentinel(ENGINE_RESULT_SENTINEL),
+          metadata: { result: JSON.stringify(result) },
+        },
+      ]),
+    `writeEngineResult:${engine}`,
+  );
 }
 
 /**

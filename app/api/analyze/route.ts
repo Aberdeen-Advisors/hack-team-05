@@ -48,9 +48,17 @@ export async function POST(req: Request) {
     });
   } catch (err) {
     console.error("[analyze] failed", err);
+    const raw = err instanceof Error ? err.message : String(err);
+    // Surface a user-actionable message for known transient backend failures.
+    const isUpstashOutage =
+      /unavailable|vector store backend/i.test(raw) ||
+      /ETIMEDOUT|ECONNRESET|ENOTFOUND/i.test(raw);
+    const message = isUpstashOutage
+      ? "Our vector store (Upstash) is temporarily unavailable. Please try uploading again in a minute."
+      : raw;
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : String(err) },
-      { status: 500 },
+      { error: message, transient: isUpstashOutage },
+      { status: isUpstashOutage ? 503 : 500 },
     );
   }
 }
