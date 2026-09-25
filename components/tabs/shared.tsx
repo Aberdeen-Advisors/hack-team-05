@@ -21,8 +21,17 @@ export function PendingCard({ label }: { label: string }) {
 
 export function ErrorCard({ error }: { error: string }) {
   return (
-    <Card className="border-jasper/40 bg-jasper/5 p-6 text-sm text-jasper">
-      Engine error: {error}
+    <Card className="flex flex-col gap-3 border-jasper/40 bg-jasper/5 p-6 text-sm text-jasper">
+      <p>Engine error: {error}</p>
+      <div>
+        <button
+          type="button"
+          onClick={() => window.location.reload()}
+          className="rounded-md border border-jasper/40 bg-white px-3 py-1.5 text-xs font-medium text-jasper transition-colors hover:bg-jasper/10"
+        >
+          Retry from last completed engine
+        </button>
+      </div>
     </Card>
   );
 }
